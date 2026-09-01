@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raiz — Gestão Financeira</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="ds/styles.css">
+<style>
+  body { margin: 0; background: var(--color-bg); color: var(--color-text); }
+  a { color: var(--color-accent-700); }
+  a:hover { color: var(--color-accent); }
+  input[type=range] { accent-color: var(--color-accent); width: 100%; }
+  select.input { appearance: none; }
+  @keyframes riseIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+</style>
+</helmet>
+
+<div style="display:flex;align-items:stretch;min-height:100vh;flex-wrap:wrap;font-family:var(--font-body)">
+
+  <aside style="flex:0 0 252px;min-width:220px;padding:var(--space-6) var(--space-4);display:flex;flex-direction:column;gap:var(--space-6)">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;border-radius:999px;background:var(--color-accent);flex:none"></div>
+      <div>
+        <div style="font-family:var(--font-heading);font-size:19px;line-height:1">Raiz</div>
+        <div style="font-size:11px;color:var(--color-neutral-600)">finanças da casa</div>
+      </div>
+    </div>
+
+    <nav style="display:flex;flex-direction:column;gap:2px">
+      <button onClick="{{ go.dashboard }}" style="{{ nav.dashboard }}" style-hover="{{ navHover }}">Visão geral</button>
+      <button onClick="{{ go.lancamentos }}" style="{{ nav.lancamentos }}" style-hover="{{ navHover }}">Lançamentos</button>
+      <button onClick="{{ go.categorias }}" style="{{ nav.categorias }}" style-hover="{{ navHover }}">Categorias</button>
+      <button onClick="{{ go.assinaturas }}" style="{{ nav.assinaturas }}" style-hover="{{ navHover }}">Assinaturas</button>
+      <button onClick="{{ go.cartoes }}" style="{{ nav.cartoes }}" style-hover="{{ navHover }}">Cartões e faturas</button>
+      <button onClick="{{ go.investimentos }}" style="{{ nav.investimentos }}" style-hover="{{ navHover }}">Investimentos</button>
+      <button onClick="{{ go.metas }}" style="{{ nav.metas }}" style-hover="{{ navHover }}">Metas e orçamentos</button>
+      <button onClick="{{ go.relatorios }}" style="{{ nav.relatorios }}" style-hover="{{ navHover }}">Relatórios</button>
+      <button onClick="{{ go.contas }}" style="{{ nav.contas }}" style-hover="{{ navHover }}">Contas</button>
+      <button onClick="{{ go.onboarding }}" style="{{ nav.onboarding }}" style-hover="{{ navHover }}">Primeiros passos</button>
+    </nav>
+
+    <div class="card" style="margin-top:auto;background:var(--color-accent-2-200);gap:var(--space-2)">
+      <div class="card-kicker" style="color:var(--color-accent-2-800)">Saldo previsto</div>
+      <div style="font-family:var(--font-heading);font-size:23px;line-height:1.1">{{ kpi.previsto }}</div>
+      <div style="font-size:12px;color:var(--color-accent-2-800)">no fim de {{ mesNome }}, já descontadas assinaturas e faturas</div>
+    </div>
+  </aside>
+
+  <main style="flex:1 1 640px;min-width:0;padding:var(--space-6);background:var(--color-neutral-100);border-radius:var(--radius-lg) 0 0 var(--radius-lg)">
+
+    <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap;margin-bottom:var(--space-6)">
+      <div>
+        <div class="card-kicker">{{ telaKicker }}</div>
+        <h2 style="margin:0">{{ telaTitulo }}</h2>
+      </div>
+      <div style="display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px;background:var(--color-surface);border-radius:999px;padding:4px 6px">
+          <button class="btn btn-icon btn-ghost" onClick="{{ mesAnterior }}" aria-label="Mês anterior">‹</button>
+          <span style="font-size:13px;min-width:104px;text-align:center">{{ mesLabel }}</span>
+          <button class="btn btn-icon btn-ghost" onClick="{{ mesProximo }}" aria-label="Mês seguinte">›</button>
+        </div>
+        <button class="btn btn-secondary" onClick="{{ dlg.importar }}">Importar CSV/OFX</button>
+        <button class="btn btn-primary" onClick="{{ dlg.novoLancamento }}">Novo lançamento</button>
+      </div>
+    </header>
+
+    <sc-if value="{{ mostrarAlertas }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;background:var(--color-accent-200);border-radius:var(--radius-lg);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-6)">
+        <span class="tag tag-accent" style="background:var(--color-accent);color:var(--color-bg)">Atenção</span>
+        <span style="font-size:13px;color:var(--color-accent-900)">{{ alertaTexto }}</span>
+        <button class="btn btn-ghost" style="margin-left:auto" onClick="{{ go.assinaturas }}">Revisar</button>
+      </div>
+    </sc-if>
+
+    <!-- ══ VISÃO GERAL ══ -->
+    <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:var(--space-6)">
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--space-3)">
+          <div class="card elev-sm" style="gap:var(--space-1)">
+            <div style="font-size:12px;color:var(--color-neutral-700)">Saldo em contas</div>
+            <div style="font-family:var(--font-heading);font-size:27px;line-height:1.1">{{ kpi.saldo }}</div>
+            <div style="font-size:12px;color:var(--color-neutral-700)">3 contas conectadas</div>
+          </div>
+          <div class="card elev-sm" style="gap:var(--space-1)">
+            <div style="font-size:12px;color:var(--color-neutral-700)">Entradas do mês</div>
+            <div style="font-family:var(--font-heading);font-size:27px;line-height:1.1;color:var(--color-accent-2-700)">{{ kpi.entradas }}</div>
+            <div style="font-size:12px;color:var(--color-neutral-700)">{{ kpi.entradasNota }}</div>
+          </div>
+          <div class="card elev-sm" style="gap:var(--space-1)">
+            <div style="font-size:12px;color:var(--color-neutral-700)">Saídas do mês</div>
+            <div style="font-family:var(--font-heading);font-size:27px;line-height:1.1;color:var(--color-accent-700)">{{ kpi.saidas }}</div>
+            <div style="font-size:12px;color:var(--color-neutral-700)">{{ kpi.saidasNota }}</div>
+          </div>
+          <div class="card elev-sm" style="gap:var(--space-1);background:var(--color-accent-900);color:var(--color-neutral-100)">
+            <div style="font-size:12px;opacity:.75">Patrimônio total</div>
+            <div style="font-family:var(--font-heading);font-size:27px;line-height:1.1">{{ kpi.patrimonio }}</div>
+            <div style="font-size:12px;opacity:.75">contas + investimentos</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:var(--space-3)">
+          <div class="card" style="gap:var(--space-4)">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3)">
+              <div>
+                <div class="card-title">Fluxo de caixa</div>
+                <div style="font-size:12px;color:var(--color-neutral-700)">realizado e projeção dos próximos meses</div>
+              </div>
+              <div style="display:flex;gap:var(--space-3);font-size:11px">
+                <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:999px;background:var(--color-accent-2-500)"></span>entradas</span>
+                <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:999px;background:var(--color-accent-500)"></span>saídas</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:var(--space-3);height:176px">
+              <sc-for list="{{ fluxo }}" as="m" hint-placeholder-count="8">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end">
+                  <div style="display:flex;align-items:flex-end;gap:4px;height:100%;width:100%;justify-content:center">
+                    <div style="{{ m.barEntrada }}"></div>
+                    <div style="{{ m.barSaida }}"></div>
+                  </div>
+                  <div style="{{ m.rotulo }}">{{ m.nome }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div class="card" style="gap:var(--space-3)">
+            <div class="card-title">Para onde o dinheiro foi</div>
+            <sc-for list="{{ gastoPorCategoria }}" as="c" hint-placeholder-count="6">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;justify-content:space-between;font-size:13px">
+                  <span style="display:flex;align-items:center;gap:8px"><span style="{{ c.dot }}"></span>{{ c.nome }}</span>
+                  <span style="color:var(--color-neutral-700)">{{ c.valorFmt }}</span>
+                </div>
+                <div style="height:8px;border-radius:999px;background:var(--color-neutral-200);overflow:hidden">
+                  <div style="{{ c.bar }}"></div>
+                </div>
+              </div>
+            </sc-for>
+            <button class="btn btn-ghost" style="align-self:flex-start" onClick="{{ go.categorias }}">Ver categorias e limites</button>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--space-3)">
+          <div class="card" style="gap:var(--space-3)">
+            <div class="card-title">Próximos vencimentos</div>
+            <sc-for list="{{ vencimentos }}" as="v" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:var(--space-3);padding-bottom:var(--space-2);border-bottom:1px solid var(--color-divider)">
+                <div style="{{ v.pill }}">{{ v.dia }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:14px">{{ v.nome }}</div>
+                  <div style="font-size:11px;color:var(--color-neutral-600)">{{ v.detalhe }}</div>
+                </div>
+                <div style="font-size:14px;font-weight:600">{{ v.valorFmt }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ modoCasal }}" hint-placeholder-val="{{ true }}">
+            <div class="card" style="gap:var(--space-3)">
+              <div class="card-title">Divisão do casal</div>
+              <div style="font-size:12px;color:var(--color-neutral-700);margin-top:-6px">quanto cada um lançou neste mês e o acerto do fim do mês</div>
+              <sc-for list="{{ divisao }}" as="p" hint-placeholder-count="2">
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <div style="display:flex;justify-content:space-between;font-size:13px">
+                    <span>{{ p.nome }}</span><span style="color:var(--color-neutral-700)">{{ p.valorFmt }} · {{ p.pctFmt }}</span>
+                  </div>
+                  <div style="height:8px;border-radius:999px;background:var(--color-neutral-200);overflow:hidden">
+                    <div style="{{ p.bar }}"></div>
+                  </div>
+                </div>
+              </sc-for>
+              <div style="background:var(--color-accent-2-100);border-radius:var(--radius-md);padding:var(--space-3);font-size:13px">{{ acerto }}</div>
+            </div>
+          </sc-if>
+
+          <div class="card" style="gap:var(--space-3)">
+            <div class="card-title">Investido</div>
+            <div style="font-family:var(--font-heading);font-size:27px;line-height:1.1">{{ kpi.investido }}</div>
+            <div style="font-size:13px;color:var(--color-neutral-700)">Rentabilidade média ponderada de {{ taxaMedia }} a.a. Em {{ anos }} anos, a projeção chega a <strong>{{ projTotal }}</strong>.</div>
+            <button class="btn btn-secondary" style="align-self:flex-start" onClick="{{ go.investimentos }}">Abrir projeções</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ LANÇAMENTOS ══ -->
+    <sc-if value="{{ isLancamentos }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+        <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;align-items:center">
+          <div class="seg">
+            <label class="seg-opt"><input type="radio" name="tipo" checked="{{ filtro.todos }}" onChange="{{ setFiltroTodos }}">Todos</label>
+            <label class="seg-opt"><input type="radio" name="tipo" checked="{{ filtro.entrada }}" onChange="{{ setFiltroEntrada }}">Entradas</label>
+            <label class="seg-opt"><input type="radio" name="tipo" checked="{{ filtro.saida }}" onChange="{{ setFiltroSaida }}">Saídas</label>
+          </div>
+          <select class="input" style="width:auto" value="{{ filtroCat }}" onChange="{{ setFiltroCat }}">
+            <option value="todas">Todas as categorias</option>
+            <sc-for list="{{ categoriasNomes }}" as="n" hint-placeholder-count="6">
+              <option value="{{ n }}">{{ n }}</option>
+            </sc-for>
+          </select>
+          <input class="input" style="width:auto;flex:1;min-width:180px" placeholder="Buscar descrição" value="{{ busca }}" onChange="{{ setBusca }}">
+          <span style="font-size:12px;color:var(--color-neutral-700)">{{ resumoFiltro }}</span>
+        </div>
+
+        <div class="card" style="padding:var(--space-2) var(--space-4) var(--space-4)">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Data</th><th>Descrição</th><th>Categoria</th><th>Conta / cartão</th><th>Responsável</th><th style="text-align:right">Valor</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ lancamentos }}" as="t" hint-placeholder-count="10">
+                <tr>
+                  <td style="white-space:nowrap;color:var(--color-neutral-700)">{{ t.dataFmt }}</td>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <span>{{ t.desc }}</span>
+                      <sc-if value="{{ t.recorrente }}" hint-placeholder-val="{{ false }}"><span class="tag tag-neutral">recorrente</span></sc-if>
+                    </div>
+                  </td>
+                  <td><span style="display:flex;align-items:center;gap:8px"><span style="{{ t.dot }}"></span>{{ t.cat }}</span></td>
+                  <td style="color:var(--color-neutral-700)">{{ t.conta }}</td>
+                  <td style="color:var(--color-neutral-700)">{{ t.pessoa }}</td>
+                  <td style="text-align:right;white-space:nowrap"><span style="{{ t.valorStyle }}">{{ t.valorFmt }}</span></td>
+                  <td style="text-align:right;white-space:nowrap">
+                    <button class="btn btn-ghost" onClick="{{ t.onEdit }}">Editar</button>
+                    <button class="btn btn-ghost" style="color:var(--color-neutral-700)" onClick="{{ t.onDel }}">Excluir</button>
+                  </td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card" style="flex-direction:row;align-items:center;gap:var(--space-4);flex-wrap:wrap;background:var(--color-accent-2-200)">
+          <div style="flex:1;min-width:220px">
+            <div class="card-title">Recorrências automáticas</div>
+            <div style="font-size:13px">{{ recorrenciasTexto }}</div>
+          </div>
+          <button class="btn btn-secondary" onClick="{{ dlg.importar }}">Importar extrato</button>
+          <button class="btn btn-primary" onClick="{{ dlg.novoLancamento }}">Novo lançamento</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ CATEGORIAS ══ -->
+    <sc-if value="{{ isCategorias }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:var(--space-3);flex-wrap:wrap">
+          <div style="font-size:13px;color:var(--color-neutral-700)">{{ resumoCategorias }}</div>
+          <button class="btn btn-primary" onClick="{{ dlg.novaCategoria }}">Nova categoria</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:var(--space-3)">
+          <sc-for list="{{ categorias }}" as="c" hint-placeholder-count="8">
+            <div class="card" style="gap:var(--space-2)">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="{{ c.dotBig }}"></span>
+                <div style="flex:1;min-width:0">
+                  <div class="card-title">{{ c.nome }}</div>
+                  <div style="font-size:11px;color:var(--color-neutral-600)">{{ c.tipoLabel }} · {{ c.qtdLabel }}</div>
+                </div>
+                <span style="{{ c.chip }}">{{ c.pctFmt }}</span>
+              </div>
+              <div style="height:9px;border-radius:999px;background:var(--color-neutral-200);overflow:hidden">
+                <div style="{{ c.bar }}"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-neutral-700)">
+                <span>{{ c.gastoFmt }} usados</span><span>limite {{ c.orcamentoFmt }}</span>
+              </div>
+              <div style="display:flex;gap:var(--space-1);margin-top:var(--space-1)">
+                <button class="btn btn-secondary" onClick="{{ c.onEdit }}">Editar</button>
+                <button class="btn btn-ghost" style="color:var(--color-neutral-700)" onClick="{{ c.onDel }}">Excluir</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div class="card" style="gap:var(--space-3)">
+          <div class="card-title">Regras de classificação automática</div>
+          <div style="font-size:13px;color:var(--color-neutral-700);margin-top:-8px">quando a descrição do extrato contém o texto, a categoria é aplicada sozinha</div>
+          <sc-for list="{{ regras }}" as="r" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:var(--space-3);font-size:13px;padding-bottom:var(--space-2);border-bottom:1px solid var(--color-divider)">
+              <code style="background:var(--color-neutral-200);border-radius:999px;padding:2px 10px;font-size:12px">{{ r.termo }}</code>
+              <span style="color:var(--color-neutral-600)">→</span>
+              <span style="display:flex;align-items:center;gap:8px"><span style="{{ r.dot }}"></span>{{ r.cat }}</span>
+              <span style="margin-left:auto;color:var(--color-neutral-600);font-size:12px">{{ r.acertos }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ ASSINATURAS ══ -->
+    <sc-if value="{{ isAssinaturas }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--space-3)">
+          <div class="card elev-sm" style="gap:2px">
+            <div style="font-size:12px;color:var(--color-neutral-700)">Custo mensal</div>
+            <div style="font-family:var(--font-heading);font-size:25px">{{ assinaturasResumo.mensal }}</div>
+          </div>
+          <div class="card elev-sm" style="gap:2px">
+            <div style="font-size:12px;color:var(--color-neutral-700)">Custo anual</div>
+            <div style="font-family:var(--font-heading);font-size:25px">{{ assinaturasResumo.anual }}</div>
+          </div>
+          <div class="card elev-sm" style="gap:2px">
+            <div style="font-size:12px;color:var(--color-neutral-700)">Ativas / pausadas</div>
+            <div style="font-family:var(--font-heading);font-size:25px">{{ assinaturasResumo.contagem }}</div>
+          </div>
+          <div class="card elev-sm" style="gap:2px;background:var(--color-accent-200)">
+            <div style="font-size:12px;color:var(--color-accent-900)">% da renda</div>
+            <div style="font-family:var(--font-heading);font-size:25px">{{ assinaturasResumo.pctRenda }}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:var(--space-3);flex-wrap:wrap">
+          <div style="font-size:13px;color:var(--color-neutral-700)">{{ assinaturasResumo.nota }}</div>
+          <button class="btn btn-primary" onClick="{{ dlg.novaAssinatura }}">Nova assinatura</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(288px,1fr));gap:var(--space-3)">
+          <sc-for list="{{ assinaturas }}" as="a" hint-placeholder-count="7">
+            <div class="card" style="gap:var(--space-2)">
+              <div style="display:flex;align-items:flex-start;gap:10px">
+                <div style="{{ a.mono }}">{{ a.inicial }}</div>
+                <div style="flex:1;min-width:0">
+                  <div class="card-title">{{ a.nome }}</div>
+                  <div style="font-size:11px;color:var(--color-neutral-600)">{{ a.categoria }} · {{ a.cartao }}</div>
+                </div>
+                <span style="{{ a.statusChip }}">{{ a.status }}</span>
+              </div>
+              <div style="display:flex;align-items:baseline;gap:8px">
+                <span style="font-family:var(--font-heading);font-size:22px">{{ a.valorFmt }}</span>
+                <span style="font-size:12px;color:var(--color-neutral-700)">/ {{ a.periodo }}</span>
+              </div>
+              <div style="font-size:12px;color:var(--color-neutral-700)">Equivale a {{ a.mensalFmt }} por mês · próximo débito {{ a.proximo }}</div>
+              <sc-if value="{{ a.aviso }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:12px;background:var(--color-accent-200);color:var(--color-accent-900);border-radius:var(--radius-md);padding:8px 12px">{{ a.avisoTexto }}</div>
+              </sc-if>
+              <div style="display:flex;gap:var(--space-1);margin-top:var(--space-1);flex-wrap:wrap">
+                <button class="btn btn-secondary" onClick="{{ a.onEdit }}">Editar</button>
+                <button class="btn btn-ghost" onClick="{{ a.onToggle }}">{{ a.toggleLabel }}</button>
+                <button class="btn btn-ghost" style="color:var(--color-neutral-700)" onClick="{{ a.onDel }}">Excluir</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ CARTÕES ══ -->
+    <sc-if value="{{ isCartoes }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:var(--space-3);flex-wrap:wrap">
+          <div style="font-size:13px;color:var(--color-neutral-700)">{{ cartoesResumo }}</div>
+          <button class="btn btn-primary" onClick="{{ dlg.novoCartao }}">Cadastrar cartão</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:var(--space-3)">
+          <sc-for list="{{ cartoes }}" as="c" hint-placeholder-count="3">
+            <button onClick="{{ c.onSelect }}" style="{{ c.shell }}">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:var(--space-3)">
+                <div>
+                  <div style="font-family:var(--font-heading);font-size:18px">{{ c.nome }}</div>
+                  <div style="font-size:11px;opacity:.7">{{ c.bandeira }} ·  •••• {{ c.final }}</div>
+                </div>
+                <div style="width:26px;height:26px;border-radius:999px;background:currentColor;opacity:.25"></div>
+              </div>
+              <div style="margin-top:auto;display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;justify-content:space-between;font-size:12px;opacity:.85"><span>fatura aberta</span><span>{{ c.faturaFmt }}</span></div>
+                <div style="height:7px;border-radius:999px;background:currentColor;opacity:.25;overflow:hidden">
+                  <div style="{{ c.bar }}"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;opacity:.75"><span>limite {{ c.limiteFmt }}</span><span>fecha {{ c.fechamento }} · vence {{ c.vencimento }}</span></div>
+              </div>
+            </button>
+          </sc-for>
+        </div>
+
+        <div class="card" style="gap:var(--space-4)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:var(--space-3);flex-wrap:wrap">
+            <div>
+              <div class="card-kicker">Fatura de {{ mesNome }}</div>
+              <div class="card-title" style="font-size:21px">{{ faturaAtual.titulo }}</div>
+              <div style="font-size:12px;color:var(--color-neutral-700)">{{ faturaAtual.subtitulo }}</div>
+            </div>
+            <div style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
+              <div style="text-align:right">
+                <div style="font-size:11px;color:var(--color-neutral-700)">total da fatura</div>
+                <div style="font-family:var(--font-heading);font-size:23px">{{ faturaAtual.totalFmt }}</div>
+              </div>
+              <button class="btn btn-secondary" onClick="{{ faturaAtual.onEdit }}">Editar cartão</button>
+              <button class="btn btn-primary" onClick="{{ faturaAtual.onPagar }}">{{ faturaAtual.pagarLabel }}</button>
+            </div>
+          </div>
+          <table class="table">
+            <thead><tr><th>Data</th><th>Lançamento</th><th>Categoria</th><th>Parcela</th><th style="text-align:right">Valor</th></tr></thead>
+            <tbody>
+              <sc-for list="{{ faturaAtual.itens }}" as="i" hint-placeholder-count="6">
+                <tr>
+                  <td style="color:var(--color-neutral-700);white-space:nowrap">{{ i.dataFmt }}</td>
+                  <td>{{ i.desc }}</td>
+                  <td><span style="display:flex;align-items:center;gap:8px"><span style="{{ i.dot }}"></span>{{ i.cat }}</span></td>
+                  <td style="color:var(--color-neutral-700)">{{ i.parcela }}</td>
+                  <td style="text-align:right;white-space:nowrap">{{ i.valorFmt }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+          <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;font-size:12px;color:var(--color-neutral-700)">
+            <span>{{ faturaAtual.assinaturasNota }}</span>
+            <span>·</span>
+            <span>{{ faturaAtual.parcelasNota }}</span>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ INVESTIMENTOS ══ -->
+    <sc-if value="{{ isInvestimentos }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--space-3)">
+          <div class="card" style="gap:var(--space-3);flex-direction:row;align-items:center;flex-wrap:wrap">
+            <div style="{{ donutStyle }}">
+              <div style="position:absolute;inset:26px;border-radius:999px;background:var(--color-surface);display:grid;place-items:center;text-align:center">
+                <div>
+                  <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">Investido</div>
+                  <div style="font-family:var(--font-heading);font-size:17px">{{ kpi.investido }}</div>
+                </div>
+              </div>
+            </div>
+            <div style="flex:1;min-width:170px;display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ alocacao }}" as="k" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:8px;font-size:13px">
+                  <span style="{{ k.dot }}"></span>
+                  <span style="flex:1;min-width:0">{{ k.classe }}</span>
+                  <span style="color:var(--color-neutral-700)">{{ k.pctFmt }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div class="card" style="gap:var(--space-3);background:var(--color-accent-900);color:var(--color-neutral-100)">
+            <div class="card-kicker" style="color:var(--color-accent-300)">Simulador de cenários</div>
+            <div style="font-family:var(--font-heading);font-size:32px;line-height:1.1">{{ projTotal }}</div>
+            <div style="font-size:13px;opacity:.8">em {{ anos }} anos · aporte mensal de {{ aporteTotalFmt }} · taxa média {{ taxaSimulada }} a.a.</div>
+            <div style="display:flex;flex-direction:column;gap:var(--space-3);margin-top:var(--space-2)">
+              <label style="display:block;font-size:12px">
+                <span style="display:flex;justify-content:space-between"><span>Prazo</span><span>{{ anos }} anos</span></span>
+                <input type="range" min="1" max="30" step="1" value="{{ anos }}" onChange="{{ setAnos }}">
+              </label>
+              <label style="display:block;font-size:12px">
+                <span style="display:flex;justify-content:space-between"><span>Ajuste de taxa</span><span>{{ ajusteFmt }}</span></span>
+                <input type="range" min="-3" max="4" step="0.5" value="{{ ajuste }}" onChange="{{ setAjuste }}">
+              </label>
+              <label style="display:block;font-size:12px">
+                <span style="display:flex;justify-content:space-between"><span>Aporte extra por mês</span><span>{{ aporteExtraFmt }}</span></span>
+                <input type="range" min="0" max="3000" step="100" value="{{ aporteExtra }}" onChange="{{ setAporteExtra }}">
+              </label>
+            </div>
+            <div style="font-size:12px;opacity:.75">{{ projJurosNota }}</div>
+          </div>
+        </div>
+
+        <div class="card" style="gap:var(--space-4)">
+          <div class="card-title">Provisão futura por marco</div>
+          <div style="display:flex;align-items:flex-end;gap:var(--space-4);height:164px">
+            <sc-for list="{{ marcos }}" as="m" hint-placeholder-count="5">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;justify-content:flex-end;height:100%">
+                <div style="font-size:12px;font-weight:600">{{ m.valorFmt }}</div>
+                <div style="{{ m.bar }}"></div>
+                <div style="font-size:12px;color:var(--color-neutral-700)">{{ m.rotulo }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:var(--space-3);flex-wrap:wrap">
+          <div style="font-size:13px;color:var(--color-neutral-700)">{{ ativosResumo }}</div>
+          <button class="btn btn-primary" onClick="{{ dlg.novoAtivo }}">Adicionar ativo</button>
+        </div>
+
+        <div class="card" style="padding:var(--space-2) var(--space-4) var(--space-4)">
+          <table class="table">
+            <thead>
+              <tr><th>Ativo</th><th>Classe</th><th style="text-align:right">Valor atual</th><th style="text-align:right">Taxa a.a.</th><th style="text-align:right">Aporte mensal</th><th>Meta</th><th style="text-align:right">Em {{ anos }} anos</th><th></th></tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{ ativos }}" as="a" hint-placeholder-count="6">
+                <tr>
+                  <td>{{ a.nome }}</td>
+                  <td><span style="display:flex;align-items:center;gap:8px"><span style="{{ a.dot }}"></span>{{ a.classe }}</span></td>
+                  <td style="text-align:right;white-space:nowrap">{{ a.valorFmt }}</td>
+                  <td style="text-align:right">{{ a.taxaFmt }}</td>
+                  <td style="text-align:right;white-space:nowrap">{{ a.aporteFmt }}</td>
+                  <td><span style="{{ a.metaChip }}">{{ a.metaLabel }}</span></td>
+                  <td style="text-align:right;white-space:nowrap;font-weight:600">{{ a.projFmt }}</td>
+                  <td style="text-align:right;white-space:nowrap">
+                    <button class="btn btn-ghost" onClick="{{ a.onEdit }}">Editar</button>
+                    <button class="btn btn-ghost" style="color:var(--color-neutral-700)" onClick="{{ a.onDel }}">Excluir</button>
+                  </td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ METAS ══ -->
+    <sc-if value="{{ isMetas }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:var(--space-3);flex-wrap:wrap">
+          <div style="font-size:13px;color:var(--color-neutral-700)">{{ metasResumo }}</div>
+          <button class="btn btn-primary" onClick="{{ dlg.novaMeta }}">Nova meta</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(288px,1fr));gap:var(--space-3)">
+          <sc-for list="{{ metas }}" as="m" hint-placeholder-count="4">
+            <div class="card" style="gap:var(--space-2)">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:var(--space-2)">
+                <div class="card-title">{{ m.nome }}</div>
+                <span style="{{ m.chip }}">{{ m.pctFmt }}</span>
+              </div>
+              <div style="height:10px;border-radius:999px;background:var(--color-neutral-200);overflow:hidden">
+                <div style="{{ m.bar }}"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-neutral-700)">
+                <span>{{ m.atualFmt }}</span><span>de {{ m.alvoFmt }}</span>
+              </div>
+              <div style="font-size:12px;color:var(--color-neutral-700)">{{ m.sugestao }}</div>
+              <div style="display:flex;gap:var(--space-1);margin-top:var(--space-1)">
+                <button class="btn btn-secondary" onClick="{{ m.onEdit }}">Editar</button>
+                <button class="btn btn-ghost" style="color:var(--color-neutral-700)" onClick="{{ m.onDel }}">Excluir</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div class="card" style="gap:var(--space-3)">
+          <div class="card-title">Orçamento do mês por categoria</div>
+          <sc-for list="{{ orcamentos }}" as="o" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap">
+              <span style="display:flex;align-items:center;gap:8px;min-width:150px;font-size:13px"><span style="{{ o.dot }}"></span>{{ o.nome }}</span>
+              <div style="flex:1;min-width:140px;height:9px;border-radius:999px;background:var(--color-neutral-200);overflow:hidden">
+                <div style="{{ o.bar }}"></div>
+              </div>
+              <span style="font-size:12px;color:var(--color-neutral-700);min-width:150px;text-align:right">{{ o.texto }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ RELATÓRIOS ══ -->
+    <sc-if value="{{ isRelatorios }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:var(--space-3)">
+          <div class="card elev-sm" style="gap:2px">
+            <div style="font-size:12px;color:var(--color-neutral-700)">Taxa de poupança</div>
+            <div style="font-family:var(--font-heading);font-size:25px">{{ rel.poupanca }}</div>
+            <div style="font-size:12px;color:var(--color-neutral-700)">média dos 6 últimos meses</div>
+          </div>
+          <div class="card elev-sm" style="gap:2px">
+            <div style="font-size:12px;color:var(--color-neutral-700)">Custo fixo</div>
+            <div style="font-family:var(--font-heading);font-size:25px">{{ rel.fixo }}</div>
+            <div style="font-size:12px;color:var(--color-neutral-700)">moradia, assinaturas, seguros</div>
+          </div>
+          <div class="card elev-sm" style="gap:2px">
+            <div style="font-size:12px;color:var(--color-neutral-700)">Custo variável</div>
+            <div style="font-family:var(--font-heading);font-size:25px">{{ rel.variavel }}</div>
+            <div style="font-size:12px;color:var(--color-neutral-700)">alimentação, lazer, transporte</div>
+          </div>
+          <div class="card elev-sm" style="gap:2px;background:var(--color-accent-2-200)">
+            <div style="font-size:12px;color:var(--color-accent-2-900)">Meses de reserva</div>
+            <div style="font-family:var(--font-heading);font-size:25px">{{ rel.reserva }}</div>
+            <div style="font-size:12px;color:var(--color-accent-2-900)">no ritmo de gasto atual</div>
+          </div>
+        </div>
+        <div class="card" style="gap:var(--space-4)">
+          <div class="card-title">Entradas e saídas por mês</div>
+          <div style="display:flex;align-items:flex-end;gap:var(--space-3);height:190px">
+            <sc-for list="{{ fluxo }}" as="m" hint-placeholder-count="8">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end">
+                <div style="display:flex;align-items:flex-end;gap:4px;height:100%;width:100%;justify-content:center">
+                  <div style="{{ m.barEntrada }}"></div>
+                  <div style="{{ m.barSaida }}"></div>
+                </div>
+                <div style="{{ m.rotulo }}">{{ m.nome }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--space-3)">
+          <div class="card" style="gap:var(--space-3)">
+            <div class="card-title">Maiores categorias do mês</div>
+            <sc-for list="{{ gastoPorCategoria }}" as="c" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;gap:var(--space-3);font-size:13px">
+                <span style="display:flex;align-items:center;gap:8px;min-width:120px"><span style="{{ c.dot }}"></span>{{ c.nome }}</span>
+                <div style="flex:1;height:8px;border-radius:999px;background:var(--color-neutral-200);overflow:hidden"><div style="{{ c.bar }}"></div></div>
+                <span style="color:var(--color-neutral-700);min-width:96px;text-align:right">{{ c.valorFmt }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div class="card" style="gap:var(--space-3)">
+            <div class="card-title">O que mudou</div>
+            <sc-for list="{{ insights }}" as="i" hint-placeholder-count="4">
+              <div style="display:flex;gap:10px;font-size:13px;padding-bottom:var(--space-2);border-bottom:1px solid var(--color-divider)">
+                <span style="{{ i.dot }}"></span>
+                <span style="flex:1">{{ i.texto }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ CONTAS ══ -->
+    <sc-if value="{{ isContas }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:var(--space-3)">
+          <sc-for list="{{ contas }}" as="c" hint-placeholder-count="3">
+            <div class="card" style="gap:var(--space-2)">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="{{ c.mono }}">{{ c.inicial }}</span>
+                <div style="flex:1;min-width:0">
+                  <div class="card-title">{{ c.nome }}</div>
+                  <div style="font-size:11px;color:var(--color-neutral-600)">{{ c.tipo }} · {{ c.dono }}</div>
+                </div>
+              </div>
+              <div style="font-family:var(--font-heading);font-size:24px">{{ c.saldoFmt }}</div>
+              <div style="font-size:12px;color:var(--color-neutral-700)">último extrato importado {{ c.sync }}</div>
+            </div>
+          </sc-for>
+          <button onClick="{{ dlg.importar }}" style="border:1px dashed var(--color-neutral-400);background:transparent;border-radius:calc(var(--radius-lg) * 1.15);padding:var(--space-4);cursor:pointer;font-family:var(--font-body);font-size:14px;color:var(--color-accent-700);display:flex;flex-direction:column;align-items:flex-start;gap:6px" style-hover="{{ dashHover }}">
+            <span style="font-family:var(--font-heading);font-size:17px">Importar extrato</span>
+            <span style="color:var(--color-neutral-700);text-align:left">CSV ou OFX do banco — as regras classificam os lançamentos sozinhas</span>
+          </button>
+        </div>
+        <div class="card" style="gap:var(--space-3)">
+          <div class="card-title">Últimas importações</div>
+          <table class="table">
+            <thead><tr><th>Arquivo</th><th>Conta</th><th>Período</th><th>Lançamentos</th><th>Classificados</th></tr></thead>
+            <tbody>
+              <sc-for list="{{ importacoes }}" as="i" hint-placeholder-count="3">
+                <tr>
+                  <td>{{ i.arquivo }}</td>
+                  <td style="color:var(--color-neutral-700)">{{ i.conta }}</td>
+                  <td style="color:var(--color-neutral-700)">{{ i.periodo }}</td>
+                  <td>{{ i.qtd }}</td>
+                  <td><span class="tag tag-accent-2">{{ i.auto }}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ ONBOARDING ══ -->
+    <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ true }}">
+      <div style="max-width:720px;display:flex;flex-direction:column;gap:var(--space-4)">
+        <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
+          <sc-for list="{{ passos }}" as="p" hint-placeholder-count="4">
+            <div style="{{ p.pill }}">{{ p.rotulo }}</div>
+          </sc-for>
+        </div>
+        <div class="card" style="gap:var(--space-4);animation:riseIn .25s ease">
+          <div>
+            <div class="card-kicker">Passo {{ passoAtual.numero }} de 4</div>
+            <h3 style="margin:0 0 6px">{{ passoAtual.titulo }}</h3>
+            <div style="font-size:14px;color:var(--color-neutral-700)">{{ passoAtual.descricao }}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--space-3)">
+            <sc-for list="{{ passoAtual.itens }}" as="i" hint-placeholder-count="4">
+              <div style="background:var(--color-neutral-100);border-radius:var(--radius-md);padding:var(--space-3);display:flex;flex-direction:column;gap:4px">
+                <div style="font-size:14px;font-weight:600">{{ i.titulo }}</div>
+                <div style="font-size:12px;color:var(--color-neutral-700)">{{ i.nota }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
+            <button class="btn btn-secondary" onClick="{{ passoVoltar }}">Voltar</button>
+            <button class="btn btn-primary" onClick="{{ passoAvancar }}">{{ passoAtual.cta }}</button>
+            <button class="btn btn-ghost" onClick="{{ go.dashboard }}">Pular para o painel</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </main>
+
+  <!-- ══ DIÁLOGOS ══ -->
+  <sc-if value="{{ dialogAberto }}" hint-placeholder-val="{{ false }}">
+    <div class="dialog-backdrop">
+      <div class="dialog" style="width:min(540px,100%);animation:riseIn .2s ease">
+        <div class="dialog-title">{{ dialogTitulo }}</div>
+
+        <sc-if value="{{ isDlgLancamento }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+            <div class="field" style="grid-column:1/-1"><label>Descrição</label><input class="input" name="desc" value="{{ form.desc }}" onChange="{{ setCampo }}" placeholder="Mercado da esquina"></div>
+            <div class="field"><label>Valor</label><input class="input" name="valor" value="{{ form.valor }}" onChange="{{ setCampo }}" placeholder="0,00"></div>
+            <div class="field"><label>Data</label><input class="input" name="data" value="{{ form.data }}" onChange="{{ setCampo }}" placeholder="28/08/2026"></div>
+            <div class="field"><label>Tipo</label>
+              <select class="input" name="tipo" value="{{ form.tipo }}" onChange="{{ setCampo }}"><option value="saida">Saída</option><option value="entrada">Entrada</option></select>
+            </div>
+            <div class="field"><label>Categoria</label>
+              <select class="input" name="cat" value="{{ form.cat }}" onChange="{{ setCampo }}">
+                <sc-for list="{{ categoriasNomes }}" as="n" hint-placeholder-count="6"><option value="{{ n }}">{{ n }}</option></sc-for>
+              </select>
+            </div>
+            <div class="field"><label>Conta ou cartão</label>
+              <select class="input" name="conta" value="{{ form.conta }}" onChange="{{ setCampo }}">
+                <sc-for list="{{ origens }}" as="o" hint-placeholder-count="5"><option value="{{ o }}">{{ o }}</option></sc-for>
+              </select>
+            </div>
+            <div class="field"><label>Responsável</label>
+              <select class="input" name="pessoa" value="{{ form.pessoa }}" onChange="{{ setCampo }}"><option value="Ana">Ana</option><option value="Bruno">Bruno</option><option value="Conjunta">Conjunta</option></select>
+            </div>
+            <div class="field"><label>Recorrência</label>
+              <select class="input" name="rec" value="{{ form.rec }}" onChange="{{ setCampo }}"><option value="Nenhuma">Nenhuma</option><option value="Mensal">Mensal</option><option value="Semanal">Semanal</option><option value="Anual">Anual</option></select>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isDlgAssinatura }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+            <div class="field" style="grid-column:1/-1"><label>Serviço</label><input class="input" name="nome" value="{{ form.nome }}" onChange="{{ setCampo }}" placeholder="Streaming de vídeo"></div>
+            <div class="field"><label>Valor cobrado</label><input class="input" name="valor" value="{{ form.valor }}" onChange="{{ setCampo }}" placeholder="0,00"></div>
+            <div class="field"><label>Período</label>
+              <select class="input" name="periodo" value="{{ form.periodo }}" onChange="{{ setCampo }}"><option value="Mensal">Mensal</option><option value="Trimestral">Trimestral</option><option value="Semestral">Semestral</option><option value="Anual">Anual</option></select>
+            </div>
+            <div class="field"><label>Próximo débito</label><input class="input" name="proximo" value="{{ form.proximo }}" onChange="{{ setCampo }}" placeholder="05/09"></div>
+            <div class="field"><label>Cartão</label>
+              <select class="input" name="cartao" value="{{ form.cartao }}" onChange="{{ setCampo }}">
+                <sc-for list="{{ cartoesNomes }}" as="n" hint-placeholder-count="3"><option value="{{ n }}">{{ n }}</option></sc-for>
+              </select>
+            </div>
+            <div class="field"><label>Categoria</label>
+              <select class="input" name="categoria" value="{{ form.categoria }}" onChange="{{ setCampo }}">
+                <sc-for list="{{ categoriasNomes }}" as="n" hint-placeholder-count="6"><option value="{{ n }}">{{ n }}</option></sc-for>
+              </select>
+            </div>
+            <div class="field"><label>Status</label>
+              <select class="input" name="status" value="{{ form.status }}" onChange="{{ setCampo }}"><option value="Ativa">Ativa</option><option value="Pausada">Pausada</option><option value="Teste grátis">Teste grátis</option></select>
+            </div>
+            <div class="field" style="grid-column:1/-1"><label>Observação</label><input class="input" name="obs" value="{{ form.obs }}" onChange="{{ setCampo }}" placeholder="Plano família, dividido com a Ana"></div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isDlgCartao }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+            <div class="field"><label>Apelido</label><input class="input" name="nome" value="{{ form.nome }}" onChange="{{ setCampo }}" placeholder="Cartão do dia a dia"></div>
+            <div class="field"><label>Bandeira</label>
+              <select class="input" name="bandeira" value="{{ form.bandeira }}" onChange="{{ setCampo }}"><option value="Visa">Visa</option><option value="Mastercard">Mastercard</option><option value="Elo">Elo</option><option value="Amex">Amex</option></select>
+            </div>
+            <div class="field"><label>Final</label><input class="input" name="final" value="{{ form.final }}" onChange="{{ setCampo }}" placeholder="4821"></div>
+            <div class="field"><label>Limite</label><input class="input" name="limite" value="{{ form.limite }}" onChange="{{ setCampo }}" placeholder="10.000,00"></div>
+            <div class="field"><label>Dia de fechamento</label><input class="input" name="fechamento" value="{{ form.fechamento }}" onChange="{{ setCampo }}" placeholder="28"></div>
+            <div class="field"><label>Dia de vencimento</label><input class="input" name="vencimento" value="{{ form.vencimento }}" onChange="{{ setCampo }}" placeholder="08"></div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isDlgAtivo }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+            <div class="field" style="grid-column:1/-1"><label>Ativo</label><input class="input" name="nome" value="{{ form.nome }}" onChange="{{ setCampo }}" placeholder="Tesouro IPCA+ 2035"></div>
+            <div class="field"><label>Classe</label>
+              <select class="input" name="classe" value="{{ form.classe }}" onChange="{{ setCampo }}"><option value="Renda fixa">Renda fixa</option><option value="Fundos imobiliários">Fundos imobiliários</option><option value="Ações Brasil">Ações Brasil</option><option value="Ações exterior">Ações exterior</option><option value="Cripto">Cripto</option></select>
+            </div>
+            <div class="field"><label>Valor atual</label><input class="input" name="valor" value="{{ form.valor }}" onChange="{{ setCampo }}" placeholder="10.000,00"></div>
+            <div class="field"><label>Taxa de retorno (% a.a.)</label><input class="input" name="taxa" value="{{ form.taxa }}" onChange="{{ setCampo }}" placeholder="11,2"></div>
+            <div class="field"><label>Aporte mensal</label><input class="input" name="aporte" value="{{ form.aporte }}" onChange="{{ setCampo }}" placeholder="400,00"></div>
+            <div class="field" style="grid-column:1/-1"><label>Meta de rentabilidade (% a.a.)</label><input class="input" name="metaTaxa" value="{{ form.metaTaxa }}" onChange="{{ setCampo }}" placeholder="10,0"></div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isDlgCategoria }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+            <div class="field"><label>Nome</label><input class="input" name="nome" value="{{ form.nome }}" onChange="{{ setCampo }}" placeholder="Alimentação"></div>
+            <div class="field"><label>Tipo</label>
+              <select class="input" name="tipo" value="{{ form.tipo }}" onChange="{{ setCampo }}"><option value="saida">Saída</option><option value="entrada">Entrada</option></select>
+            </div>
+            <div class="field"><label>Limite mensal</label><input class="input" name="orcamento" value="{{ form.orcamento }}" onChange="{{ setCampo }}" placeholder="1.200,00"></div>
+            <div class="field"><label>Cor</label>
+              <select class="input" name="cor" value="{{ form.cor }}" onChange="{{ setCampo }}"><option value="#d67f48">Terracota</option><option value="#8fa073">Sálvia</option><option value="#b2622d">Âmbar</option><option value="#645c50">Terra</option><option value="#aebf92">Musgo</option></select>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isDlgMeta }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+            <div class="field" style="grid-column:1/-1"><label>Meta</label><input class="input" name="nome" value="{{ form.nome }}" onChange="{{ setCampo }}" placeholder="Reserva de emergência"></div>
+            <div class="field"><label>Valor alvo</label><input class="input" name="alvo" value="{{ form.alvo }}" onChange="{{ setCampo }}" placeholder="30.000,00"></div>
+            <div class="field"><label>Já guardado</label><input class="input" name="atual" value="{{ form.atual }}" onChange="{{ setCampo }}" placeholder="18.400,00"></div>
+            <div class="field" style="grid-column:1/-1"><label>Prazo (meses)</label><input class="input" name="prazo" value="{{ form.prazo }}" onChange="{{ setCampo }}" placeholder="18"></div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isDlgImportar }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+            <div style="border:1px dashed var(--color-neutral-400);border-radius:var(--radius-md);padding:var(--space-6);text-align:center">
+              <div style="font-family:var(--font-heading);font-size:17px;margin-bottom:4px">Arraste o arquivo do banco</div>
+              <div style="font-size:12px;color:var(--color-neutral-700)">CSV ou OFX até 5 MB</div>
+            </div>
+            <div class="field"><label>Conta de destino</label>
+              <select class="input" name="conta" value="{{ form.conta }}" onChange="{{ setCampo }}">
+                <sc-for list="{{ origens }}" as="o" hint-placeholder-count="5"><option value="{{ o }}">{{ o }}</option></sc-for>
+              </select>
+            </div>
+            <label class="radio"><input type="checkbox" checked="{{ true }}"><span class="dot"></span>Aplicar as regras de classificação automática</label>
+            <label class="radio"><input type="checkbox" checked="{{ true }}"><span class="dot"></span>Ignorar lançamentos duplicados</label>
+          </div>
+        </sc-if>
+
+        <div class="dialog-actions">
+          <button class="btn btn-secondary" onClick="{{ dlg.fechar }}">Cancelar</button>
+          <button class="btn btn-primary" onClick="{{ dlg.salvar }}">{{ dialogCta }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;modoPrivacidade&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Comportamento&quot;},&quot;modoCasal&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Comportamento&quot;},&quot;alertasVencimento&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Comportamento&quot;}}">
+class Component extends DCLogic {
+  state = {
+    tela: 'dashboard', mes: 5, dialog: null, form: {}, editId: null,
+    filtroTipo: 'todos', filtroCat: 'todas', busca: '',
+    cartaoSel: 'c1', anos: 10, ajuste: 0, aporteExtra: 0, passo: 1, faturaPaga: false,
+    contas: [
+      { id: 'b1', nome: 'Nubank', tipo: 'Conta corrente', dono: 'Ana', saldo: 6420.8, sync: 'ontem' },
+      { id: 'b2', nome: 'Itaú', tipo: 'Conta conjunta', dono: 'Ana e Bruno', saldo: 12310.45, sync: 'há 3 dias' },
+      { id: 'b3', nome: 'Reserva', tipo: 'Poupança', dono: 'Conjunta', saldo: 3150, sync: 'há 1 semana' }
+    ],
+    categorias: [
+      { id: 'k1', nome: 'Moradia', tipo: 'saida', cor: '#b2622d', orcamento: 2600 },
+      { id: 'k2', nome: 'Alimentação', tipo: 'saida', cor: '#d67f48', orcamento: 1500 },
+      { id: 'k3', nome: 'Transporte', tipo: 'saida', cor: '#645c50', orcamento: 650 },
+      { id: 'k4', nome: 'Saúde', tipo: 'saida', cor: '#8fa073', orcamento: 700 },
+      { id: 'k5', nome: 'Lazer', tipo: 'saida', cor: '#aebf92', orcamento: 600 },
+      { id: 'k6', nome: 'Assinaturas', tipo: 'saida', cor: '#f6a06b', orcamento: 450 },
+      { id: 'k7', nome: 'Educação', tipo: 'saida', cor: '#728157', orcamento: 480 },
+      { id: 'k8', nome: 'Salário', tipo: 'entrada', cor: '#56633f', orcamento: 0 }
+    ],
+    transacoes: [
+      { id: 't1', data: '01/08', desc: 'Salário Ana', cat: 'Salário', tipo: 'entrada', valor: 7400, conta: 'Itaú', rec: 'Mensal', pessoa: 'Ana' },
+      { id: 't2', data: '05/08', desc: 'Salário Bruno', cat: 'Salário', tipo: 'entrada', valor: 5200, conta: 'Nubank', rec: 'Mensal', pessoa: 'Bruno' },
+      { id: 't3', data: '05/08', desc: 'Aluguel', cat: 'Moradia', tipo: 'saida', valor: 2200, conta: 'Itaú', rec: 'Mensal', pessoa: 'Conjunta' },
+      { id: 't4', data: '06/08', desc: 'Condomínio', cat: 'Moradia', tipo: 'saida', valor: 480, conta: 'Itaú', rec: 'Mensal', pessoa: 'Conjunta' },
+      { id: 't5', data: '08/08', desc: 'Supermercado Vila', cat: 'Alimentação', tipo: 'saida', valor: 612.4, conta: 'Nubank Ultravioleta', rec: 'Nenhuma', pessoa: 'Ana', parcela: '—' },
+      { id: 't6', data: '09/08', desc: 'Combustível', cat: 'Transporte', tipo: 'saida', valor: 288.9, conta: 'Nubank Ultravioleta', rec: 'Nenhuma', pessoa: 'Bruno', parcela: '—' },
+      { id: 't7', data: '11/08', desc: 'Restaurante do bairro', cat: 'Alimentação', tipo: 'saida', valor: 186.5, conta: 'Itaú Click', rec: 'Nenhuma', pessoa: 'Conjunta', parcela: '—' },
+      { id: 't8', data: '12/08', desc: 'Plano de saúde', cat: 'Saúde', tipo: 'saida', valor: 642, conta: 'Itaú', rec: 'Mensal', pessoa: 'Conjunta' },
+      { id: 't9', data: '14/08', desc: 'Cinema e jantar', cat: 'Lazer', tipo: 'saida', valor: 214, conta: 'Nubank Ultravioleta', rec: 'Nenhuma', pessoa: 'Ana', parcela: '—' },
+      { id: 't10', data: '15/08', desc: 'Curso de inglês', cat: 'Educação', tipo: 'saida', valor: 420, conta: 'Itaú Click', rec: 'Mensal', pessoa: 'Bruno', parcela: '—' },
+      { id: 't11', data: '17/08', desc: 'Notebook (3/10)', cat: 'Moradia', tipo: 'saida', valor: 389.9, conta: 'Nubank Ultravioleta', rec: 'Nenhuma', pessoa: 'Bruno', parcela: '3/10' },
+      { id: 't12', data: '18/08', desc: 'Feira orgânica', cat: 'Alimentação', tipo: 'saida', valor: 148.7, conta: 'Nubank', rec: 'Semanal', pessoa: 'Ana' },
+      { id: 't13', data: '20/08', desc: 'Assinaturas do mês', cat: 'Assinaturas', tipo: 'saida', valor: 272.6, conta: 'Nubank Ultravioleta', rec: 'Mensal', pessoa: 'Conjunta', parcela: '—' },
+      { id: 't14', data: '22/08', desc: 'Freela de design', cat: 'Salário', tipo: 'entrada', valor: 1800, conta: 'Nubank', rec: 'Nenhuma', pessoa: 'Ana' },
+      { id: 't15', data: '24/08', desc: 'Farmácia', cat: 'Saúde', tipo: 'saida', valor: 96.3, conta: 'Itaú Click', rec: 'Nenhuma', pessoa: 'Conjunta', parcela: '—' },
+      { id: 't16', data: '26/08', desc: 'Uber para o trabalho', cat: 'Transporte', tipo: 'saida', valor: 132.4, conta: 'Nubank Ultravioleta', rec: 'Nenhuma', pessoa: 'Ana', parcela: '—' },
+      { id: 't17', data: '28/08', desc: 'Aporte mensal', cat: 'Moradia', tipo: 'saida', valor: 1700, conta: 'Itaú', rec: 'Mensal', pessoa: 'Conjunta' }
+    ],
+    assinaturas: [
+      { id: 's1', nome: 'Streaming de vídeo', valor: 55.9, periodo: 'Mensal', proximo: '05/09', cartao: 'Nubank Ultravioleta', categoria: 'Assinaturas', status: 'Ativa', obs: 'Plano família' },
+      { id: 's2', nome: 'Música em família', valor: 34.9, periodo: 'Mensal', proximo: '09/09', cartao: 'Nubank Ultravioleta', categoria: 'Assinaturas', status: 'Ativa', obs: '' },
+      { id: 's3', nome: 'Nuvem 2 TB', valor: 27.9, periodo: 'Mensal', proximo: '12/09', cartao: 'Itaú Click', categoria: 'Assinaturas', status: 'Ativa', obs: '' },
+      { id: 's4', nome: 'Academia', valor: 129, periodo: 'Mensal', proximo: '02/09', cartao: 'Itaú Click', categoria: 'Saúde', status: 'Ativa', obs: 'Dois acessos' },
+      { id: 's5', nome: 'Suíte de design', valor: 1290, periodo: 'Anual', proximo: '18/11', cartao: 'Nubank Ultravioleta', categoria: 'Educação', status: 'Ativa', obs: 'Renova por 1.290 em novembro' },
+      { id: 's6', nome: 'Seguro do celular', valor: 24.9, periodo: 'Mensal', proximo: '20/09', cartao: 'Inter Gold', categoria: 'Assinaturas', status: 'Ativa', obs: '' },
+      { id: 's7', nome: 'Jornal digital', valor: 119.7, periodo: 'Trimestral', proximo: '30/09', cartao: 'Inter Gold', categoria: 'Lazer', status: 'Pausada', obs: '' },
+      { id: 's8', nome: 'App de meditação', valor: 0, periodo: 'Mensal', proximo: '06/09', cartao: 'Nubank Ultravioleta', categoria: 'Saúde', status: 'Teste grátis', obs: 'Vira 49,90 em 06/09' }
+    ],
+    cartoes: [
+      { id: 'c1', nome: 'Nubank Ultravioleta', bandeira: 'Mastercard', final: '4821', limite: 12000, fechamento: '28/08', vencimento: '08/09', escuro: true },
+      { id: 'c2', nome: 'Itaú Click', bandeira: 'Visa', final: '9033', limite: 8000, fechamento: '02/09', vencimento: '12/09', escuro: false },
+      { id: 'c3', nome: 'Inter Gold', bandeira: 'Mastercard', final: '1174', limite: 5000, fechamento: '05/09', vencimento: '15/09', escuro: false }
+    ],
+    ativos: [
+      { id: 'a1', nome: 'Tesouro IPCA+ 2035', classe: 'Renda fixa', valor: 42000, taxa: 11.2, aporte: 400, metaTaxa: 10 },
+      { id: 'a2', nome: 'CDB liquidez diária', classe: 'Renda fixa', valor: 18500, taxa: 10.4, aporte: 300, metaTaxa: 10 },
+      { id: 'a3', nome: 'FII de logística', classe: 'Fundos imobiliários', valor: 26300, taxa: 8.6, aporte: 250, metaTaxa: 9.5 },
+      { id: 'a4', nome: 'ETF S&P 500', classe: 'Ações exterior', valor: 31700, taxa: 12.5, aporte: 500, metaTaxa: 11 },
+      { id: 'a5', nome: 'Carteira de ações BR', classe: 'Ações Brasil', valor: 14900, taxa: 9.8, aporte: 150, metaTaxa: 11 },
+      { id: 'a6', nome: 'Bitcoin', classe: 'Cripto', valor: 9400, taxa: 15, aporte: 100, metaTaxa: 12 }
+    ],
+    metas: [
+      { id: 'g1', nome: 'Reserva de emergência', alvo: 30000, atual: 18400, prazo: 12 },
+      { id: 'g2', nome: 'Viagem ao Japão', alvo: 24000, atual: 7250, prazo: 18 },
+      { id: 'g3', nome: 'Entrada do apartamento', alvo: 90000, atual: 32800, prazo: 36 },
+      { id: 'g4', nome: 'Troca do carro', alvo: 45000, atual: 11900, prazo: 24 }
+    ]
+  };
+
+  MESES = ['Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro'];
+  CURTOS = ['Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out'];
+  FLUXO = [
+    { e: 12600, s: 8120 }, { e: 12600, s: 9040 }, { e: 13100, s: 7860 }, { e: 12600, s: 8740 },
+    { e: 14200, s: 9310 }, { e: 14400, s: 8100 }, { e: 12600, s: 8600 }, { e: 12600, s: 8950 }
+  ];
+  CLASSE_COR = {
+    'Renda fixa': '#d67f48', 'Fundos imobiliários': '#8fa073', 'Ações exterior': '#b2622d',
+    'Ações Brasil': '#aebf92', 'Cripto': '#645c50'
+  };
+  TITULOS = {
+    dashboard: ['Visão geral', 'Agosto de 2026'],
+    lancamentos: ['Movimentações', 'Lançamentos'],
+    categorias: ['Classificação', 'Categorias e limites'],
+    assinaturas: ['Serviços recorrentes', 'Assinaturas'],
+    cartoes: ['Crédito', 'Cartões e faturas'],
+    investimentos: ['Patrimônio', 'Investimentos e projeções'],
+    metas: ['Planejamento', 'Metas e orçamentos'],
+    relatorios: ['Análise', 'Relatórios'],
+    contas: ['Origens', 'Contas e importações'],
+    onboarding: ['Configuração', 'Primeiros passos']
+  };
+
+  money(v, dec) {
+    if (this.props.modoPrivacidade) return 'R$ ' + '••••';
+    const d = dec === 0 ? 0 : 2;
+    return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+  num(v) {
+    if (typeof v === 'number') return v;
+    const s = String(v || '').replace(/\./g, '').replace(',', '.').replace(/[^0-9.\-]/g, '');
+    return parseFloat(s) || 0;
+  }
+  pct(v) { return (v || 0).toFixed(0).replace('.', ',') + '%'; }
+  corDe(nome) { const c = this.state.categorias.find(x => x.nome === nome); return c ? c.cor : '#a19786'; }
+  dot(cor, size) { return { width: (size || 10) + 'px', height: (size || 10) + 'px', borderRadius: '999px', background: cor, flex: 'none', display: 'inline-block' }; }
+  bar(pct, cor, h) { return { width: Math.max(2, Math.min(100, pct)) + '%', height: (h || 8) + 'px', borderRadius: '999px', background: cor }; }
+  mensal(a) {
+    const div = { Mensal: 1, Trimestral: 3, Semestral: 6, Anual: 12 }[a.periodo] || 1;
+    return a.valor / div;
+  }
+  fv(pv, anual, pmt, meses) {
+    const r = Math.pow(1 + Math.max(0.0001, anual), 1 / 12) - 1;
+    return pv * Math.pow(1 + r, meses) + pmt * ((Math.pow(1 + r, meses) - 1) / r);
+  }
+  abrir(tipo, item) {
+    this.setState({ dialog: tipo, form: item ? Object.assign({}, item) : this.padrao(tipo), editId: item ? item.id : null });
+  }
+  padrao(tipo) {
+    if (tipo === 'lancamento') return { desc: '', valor: '', data: '29/08', tipo: 'saida', cat: 'Alimentação', conta: 'Nubank', pessoa: 'Conjunta', rec: 'Nenhuma' };
+    if (tipo === 'assinatura') return { nome: '', valor: '', periodo: 'Mensal', proximo: '', cartao: 'Nubank Ultravioleta', categoria: 'Assinaturas', status: 'Ativa', obs: '' };
+    if (tipo === 'cartao') return { nome: '', bandeira: 'Visa', final: '', limite: '', fechamento: '', vencimento: '' };
+    if (tipo === 'ativo') return { nome: '', classe: 'Renda fixa', valor: '', taxa: '', aporte: '', metaTaxa: '' };
+    if (tipo === 'categoria') return { nome: '', tipo: 'saida', orcamento: '', cor: '#d67f48' };
+    if (tipo === 'meta') return { nome: '', alvo: '', atual: '', prazo: '' };
+    return { conta: 'Nubank' };
+  }
+  salvar = () => {
+    const { dialog, form, editId } = this.state;
+    const mapa = { lancamento: 'transacoes', assinatura: 'assinaturas', cartao: 'cartoes', ativo: 'ativos', categoria: 'categorias', meta: 'metas' };
+    const chave = mapa[dialog];
+    if (!chave) { this.setState({ dialog: null }); return; }
+    const numericos = { transacoes: ['valor'], assinaturas: ['valor'], cartoes: ['limite'], ativos: ['valor', 'taxa', 'aporte', 'metaTaxa'], categorias: ['orcamento'], metas: ['alvo', 'atual', 'prazo'] }[chave];
+    const item = Object.assign({}, form);
+    numericos.forEach(k => { item[k] = this.num(item[k]); });
+    if (!item.nome && !item.desc) item[chave === 'transacoes' ? 'desc' : 'nome'] = 'Sem título';
+    this.setState(s => {
+      const lista = s[chave].slice();
+      if (editId) {
+        const i = lista.findIndex(x => x.id === editId);
+        lista[i] = Object.assign({}, lista[i], item);
+      } else {
+        lista.unshift(Object.assign({ id: chave + Date.now() }, item));
+      }
+      return { [chave]: lista, dialog: null, editId: null, form: {} };
+    });
+  };
+  remover(chave, id) { this.setState(s => ({ [chave]: s[chave].filter(x => x.id !== id) })); }
+
+  renderVals() {
+    const s = this.state;
+    const M = (v, d) => this.money(v, d);
+    const casal = this.props.modoCasal !== false;
+
+    const go = {};
+    Object.keys(this.TITULOS).forEach(k => { go[k] = () => this.setState({ tela: k }); });
+    const navBase = 'text-align:left;font-family:var(--font-body);font-size:14px;padding:9px 14px;border-radius:999px;border:1px solid transparent;cursor:pointer;background:transparent;color:var(--color-text)';
+    const nav = {};
+    Object.keys(this.TITULOS).forEach(k => {
+      nav[k] = s.tela === k
+        ? { textAlign: 'left', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '14px', padding: '9px 14px', borderRadius: '999px', border: '1px solid transparent', cursor: 'pointer', background: 'var(--color-accent-200)', color: 'var(--color-accent-900)' }
+        : { textAlign: 'left', fontFamily: 'var(--font-body)', fontSize: '14px', padding: '9px 14px', borderRadius: '999px', border: '1px solid transparent', cursor: 'pointer', background: 'transparent', color: 'var(--color-text)' };
+    });
+
+    // ── totais do mês
+    const entradas = s.transacoes.filter(t => t.tipo === 'entrada').reduce((a, t) => a + t.valor, 0);
+    const saidas = s.transacoes.filter(t => t.tipo === 'saida').reduce((a, t) => a + t.valor, 0);
+    const saldoContas = s.contas.reduce((a, c) => a + c.saldo, 0);
+    const investido = s.ativos.reduce((a, x) => a + x.valor, 0);
+    const assinAtivas = s.assinaturas.filter(a => a.status !== 'Pausada');
+    const custoMensalAssin = assinAtivas.reduce((a, x) => a + this.mensal(x), 0);
+    const faturasAbertas = s.cartoes.map(c => s.transacoes.filter(t => t.conta === c.nome).reduce((a, t) => a + t.valor, 0));
+    const totalFaturas = faturasAbertas.reduce((a, b) => a + b, 0);
+
+    // ── gasto por categoria
+    const porCat = s.categorias.filter(c => c.tipo === 'saida').map(c => {
+      const itens = s.transacoes.filter(t => t.cat === c.nome && t.tipo === 'saida');
+      const gasto = itens.reduce((a, t) => a + t.valor, 0);
+      return { cat: c, gasto, qtd: itens.length };
+    }).sort((a, b) => b.gasto - a.gasto);
+    const maxCat = Math.max.apply(null, porCat.map(x => x.gasto).concat([1]));
+
+    const gastoPorCategoria = porCat.filter(x => x.gasto > 0).slice(0, 6).map(x => ({
+      nome: x.cat.nome, valorFmt: M(x.gasto), dot: this.dot(x.cat.cor),
+      bar: this.bar((x.gasto / maxCat) * 100, x.cat.cor, 8)
+    }));
+
+    const categorias = s.categorias.map(c => {
+      const g = porCat.find(x => x.cat.id === c.id);
+      const gasto = g ? g.gasto : 0;
+      const p = c.orcamento ? (gasto / c.orcamento) * 100 : 0;
+      const estourou = p > 100;
+      return {
+        nome: c.nome, tipoLabel: c.tipo === 'entrada' ? 'Entrada' : 'Saída',
+        qtdLabel: (g ? g.qtd : 0) + ' lançamentos',
+        gastoFmt: M(gasto), orcamentoFmt: c.orcamento ? M(c.orcamento, 0) : 'sem limite',
+        pctFmt: c.orcamento ? this.pct(p) : '—',
+        dotBig: this.dot(c.cor, 26),
+        bar: this.bar(p, estourou ? '#8c491a' : c.cor, 9),
+        chip: {
+          fontSize: '11px', padding: '3px 10px', borderRadius: '999px',
+          background: estourou ? 'var(--color-accent-200)' : 'var(--color-accent-2-100)',
+          color: estourou ? 'var(--color-accent-800)' : 'var(--color-accent-2-800)'
+        },
+        onEdit: () => this.abrir('categoria', c),
+        onDel: () => this.remover('categorias', c.id)
+      };
+    });
+
+    // ── lançamentos filtrados
+    const busca = s.busca.toLowerCase();
+    const lancamentos = s.transacoes.filter(t =>
+      (s.filtroTipo === 'todos' || t.tipo === s.filtroTipo) &&
+      (s.filtroCat === 'todas' || t.cat === s.filtroCat) &&
+      (!busca || t.desc.toLowerCase().indexOf(busca) >= 0)
+    ).map(t => ({
+      dataFmt: t.data, desc: t.desc, cat: t.cat, conta: t.conta,
+      pessoa: casal ? t.pessoa : '—',
+      recorrente: t.rec && t.rec !== 'Nenhuma',
+      dot: this.dot(this.corDe(t.cat)),
+      valorFmt: (t.tipo === 'entrada' ? '+ ' : '– ') + M(t.valor),
+      valorStyle: { fontWeight: 600, color: t.tipo === 'entrada' ? 'var(--color-accent-2-700)' : 'var(--color-text)' },
+      onEdit: () => this.abrir('lancamento', t),
+      onDel: () => this.remover('transacoes', t.id)
+    }));
+
+    // ── assinaturas
+    const assinaturas = s.assinaturas.map(a => {
+      const pausada = a.status === 'Pausada';
+      return {
+        nome: a.nome, categoria: a.categoria, cartao: a.cartao, periodo: a.periodo.toLowerCase(),
+        inicial: a.nome.charAt(0),
+        valorFmt: M(a.valor), mensalFmt: M(this.mensal(a)), proximo: a.proximo,
+        status: a.status,
+        mono: { width: '38px', height: '38px', borderRadius: '999px', flex: 'none', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-heading)', fontSize: '16px', background: pausada ? 'var(--color-neutral-200)' : 'var(--color-accent-200)', color: pausada ? 'var(--color-neutral-700)' : 'var(--color-accent-900)' },
+        statusChip: {
+          fontSize: '11px', padding: '3px 10px', borderRadius: '999px', whiteSpace: 'nowrap',
+          background: pausada ? 'var(--color-neutral-200)' : a.status === 'Teste grátis' ? 'var(--color-accent-200)' : 'var(--color-accent-2-100)',
+          color: pausada ? 'var(--color-neutral-800)' : a.status === 'Teste grátis' ? 'var(--color-accent-800)' : 'var(--color-accent-2-800)'
+        },
+        aviso: !!a.obs, avisoTexto: a.obs,
+        toggleLabel: pausada ? 'Reativar' : 'Pausar',
+        onEdit: () => this.abrir('assinatura', a),
+        onToggle: () => this.setState(st => ({ assinaturas: st.assinaturas.map(x => x.id === a.id ? Object.assign({}, x, { status: x.status === 'Pausada' ? 'Ativa' : 'Pausada' }) : x) })),
+        onDel: () => this.remover('assinaturas', a.id)
+      };
+    });
+
+    // ── cartões e fatura
+    const cartoes = s.cartoes.map((c, i) => {
+      const fatura = faturasAbertas[i];
+      const p = (fatura / c.limite) * 100;
+      return {
+        nome: c.nome, bandeira: c.bandeira, final: c.final,
+        faturaFmt: M(fatura), limiteFmt: M(c.limite, 0), fechamento: c.fechamento, vencimento: c.vencimento,
+        shell: {
+          display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', minHeight: '178px', textAlign: 'left',
+          padding: 'var(--space-4)', borderRadius: 'calc(var(--radius-lg) * 1.15)', cursor: 'pointer',
+          fontFamily: 'var(--font-body)',
+          background: c.escuro ? 'var(--color-accent-900)' : 'var(--color-surface)',
+          color: c.escuro ? 'var(--color-neutral-100)' : 'var(--color-text)',
+          border: s.cartaoSel === c.id ? '2px solid var(--color-accent)' : '2px solid transparent',
+          boxShadow: s.cartaoSel === c.id ? 'var(--shadow-md)' : 'none'
+        },
+        bar: { width: Math.max(3, Math.min(100, p)) + '%', height: '7px', borderRadius: '999px', background: c.escuro ? 'var(--color-accent-300)' : 'var(--color-accent)' },
+        onSelect: () => this.setState({ cartaoSel: c.id })
+      };
+    });
+    const cartaoAtivo = s.cartoes.find(c => c.id === s.cartaoSel) || s.cartoes[0];
+    const itensFatura = s.transacoes.filter(t => t.conta === cartaoAtivo.nome);
+    const totalFatura = itensFatura.reduce((a, t) => a + t.valor, 0);
+    const assinDoCartao = s.assinaturas.filter(a => a.cartao === cartaoAtivo.nome && a.status !== 'Pausada');
+    const faturaAtual = {
+      titulo: cartaoAtivo.nome + ' ·  •••• ' + cartaoAtivo.final,
+      subtitulo: 'Fecha em ' + cartaoAtivo.fechamento + ' e vence em ' + cartaoAtivo.vencimento + ' · limite de ' + M(cartaoAtivo.limite, 0),
+      totalFmt: M(totalFatura),
+      pagarLabel: s.faturaPaga ? 'Fatura paga' : 'Marcar como paga',
+      onPagar: () => this.setState(st => ({ faturaPaga: !st.faturaPaga })),
+      onEdit: () => this.abrir('cartao', cartaoAtivo),
+      itens: itensFatura.map(t => ({
+        dataFmt: t.data, desc: t.desc, cat: t.cat, parcela: t.parcela || '—',
+        dot: this.dot(this.corDe(t.cat)), valorFmt: M(t.valor)
+      })),
+      assinaturasNota: assinDoCartao.length + ' assinaturas debitam neste cartão (' + M(assinDoCartao.reduce((a, x) => a + this.mensal(x), 0)) + '/mês)',
+      parcelasNota: itensFatura.filter(t => t.parcela && t.parcela !== '—').length + ' compra parcelada em andamento'
+    };
+
+    // ── investimentos e projeção
+    const aporteBase = s.ativos.reduce((a, x) => a + x.aporte, 0);
+    const meses = s.anos * 12;
+    const projDe = (mesesN) => s.ativos.reduce((acc, x) => {
+      const extra = investido ? s.aporteExtra * (x.valor / investido) : 0;
+      return acc + this.fv(x.valor, (x.taxa + s.ajuste) / 100, x.aporte + extra, mesesN);
+    }, 0);
+    const projTotalVal = projDe(meses);
+    const taxaMediaVal = investido ? s.ativos.reduce((a, x) => a + x.taxa * x.valor, 0) / investido : 0;
+    const aportado = investido + (aporteBase + s.aporteExtra) * meses;
+
+    const marcosAnos = [1, 3, 5, 10, 20];
+    const marcosVal = marcosAnos.map(y => projDe(y * 12));
+    const maxMarco = Math.max.apply(null, marcosVal);
+    const marcos = marcosAnos.map((y, i) => ({
+      rotulo: y + (y === 1 ? ' ano' : ' anos'),
+      valorFmt: M(marcosVal[i], 0),
+      bar: { width: '100%', maxWidth: '76px', height: Math.max(8, (marcosVal[i] / maxMarco) * 118) + 'px', borderRadius: 'var(--radius-md) var(--radius-md) 6px 6px', background: y === s.anos ? 'var(--color-accent)' : 'var(--color-accent-300)' }
+    }));
+
+    const classes = {};
+    s.ativos.forEach(x => { classes[x.classe] = (classes[x.classe] || 0) + x.valor; });
+    let acumulado = 0;
+    const fatias = Object.keys(classes).map(k => {
+      const inicio = (acumulado / investido) * 100;
+      acumulado += classes[k];
+      const fim = (acumulado / investido) * 100;
+      const cor = this.CLASSE_COR[k] || '#a19786';
+      return { classe: k, cor, pct: (classes[k] / investido) * 100, css: cor + ' ' + inicio.toFixed(1) + '% ' + fim.toFixed(1) + '%' };
+    });
+    const donutStyle = {
+      position: 'relative', width: '164px', height: '164px', borderRadius: '999px', flex: 'none',
+      background: 'conic-gradient(' + fatias.map(f => f.css).join(',') + ')'
+    };
+    const alocacao = fatias.map(f => ({ classe: f.classe, pctFmt: this.pct(f.pct), dot: this.dot(f.cor, 12) }));
+
+    const ativos = s.ativos.map(x => {
+      const bate = x.taxa >= x.metaTaxa;
+      const extra = investido ? s.aporteExtra * (x.valor / investido) : 0;
+      return {
+        nome: x.nome, classe: x.classe, valorFmt: M(x.valor, 0),
+        taxaFmt: x.taxa.toFixed(1).replace('.', ',') + '%',
+        aporteFmt: M(x.aporte, 0),
+        metaLabel: (bate ? 'acima de ' : 'abaixo de ') + x.metaTaxa.toFixed(1).replace('.', ',') + '%',
+        metaChip: { fontSize: '11px', padding: '3px 10px', borderRadius: '999px', whiteSpace: 'nowrap', background: bate ? 'var(--color-accent-2-100)' : 'var(--color-accent-200)', color: bate ? 'var(--color-accent-2-800)' : 'var(--color-accent-800)' },
+        projFmt: M(this.fv(x.valor, (x.taxa + s.ajuste) / 100, x.aporte + extra, meses), 0),
+        dot: this.dot(this.CLASSE_COR[x.classe] || '#a19786'),
+        onEdit: () => this.abrir('ativo', x),
+        onDel: () => this.remover('ativos', x.id)
+      };
+    });
+
+    // ── metas e orçamentos
+    const metas = s.metas.map(m => {
+      const p = (m.atual / m.alvo) * 100;
+      const falta = Math.max(0, m.alvo - m.atual);
+      return {
+        nome: m.nome, pctFmt: this.pct(p), atualFmt: M(m.atual, 0), alvoFmt: M(m.alvo, 0),
+        bar: this.bar(p, p >= 100 ? '#8fa073' : 'var(--color-accent)', 10),
+        chip: { fontSize: '11px', padding: '3px 10px', borderRadius: '999px', background: 'var(--color-accent-2-100)', color: 'var(--color-accent-2-800)' },
+        sugestao: 'Guardar ' + M(falta / Math.max(1, m.prazo), 0) + ' por mês para chegar em ' + m.prazo + ' meses',
+        onEdit: () => this.abrir('meta', m),
+        onDel: () => this.remover('metas', m.id)
+      };
+    });
+    const orcamentos = porCat.filter(x => x.cat.orcamento).map(x => {
+      const p = (x.gasto / x.cat.orcamento) * 100;
+      return {
+        nome: x.cat.nome, dot: this.dot(x.cat.cor),
+        bar: this.bar(p, p > 100 ? '#8c491a' : x.cat.cor, 9),
+        texto: M(x.gasto, 0) + ' de ' + M(x.cat.orcamento, 0) + ' · ' + this.pct(p)
+      };
+    });
+
+    // ── fluxo
+    const maxFluxo = Math.max.apply(null, this.FLUXO.map(f => Math.max(f.e, f.s)));
+    const fluxo = this.FLUXO.map((f, i) => {
+      const previsto = i > 5;
+      return {
+        nome: this.CURTOS[i],
+        barEntrada: { width: '18px', height: Math.max(6, (f.e / maxFluxo) * 100) + '%', borderRadius: '999px 999px 4px 4px', background: 'var(--color-accent-2-500)', opacity: previsto ? 0.45 : 1 },
+        barSaida: { width: '18px', height: Math.max(6, (f.s / maxFluxo) * 100) + '%', borderRadius: '999px 999px 4px 4px', background: 'var(--color-accent-500)', opacity: previsto ? 0.45 : 1 },
+        rotulo: { fontSize: '11px', color: previsto ? 'var(--color-neutral-600)' : 'var(--color-neutral-800)', fontStyle: previsto ? 'italic' : 'normal' }
+      };
+    });
+
+    // ── vencimentos
+    const venc = assinAtivas.slice(0, 3).map(a => ({
+      nome: a.nome, detalhe: a.periodo + ' · ' + a.cartao, valor: this.mensal(a), dia: a.proximo.slice(0, 2), destaque: a.status === 'Teste grátis'
+    })).concat(s.cartoes.slice(0, 2).map((c, i) => ({
+      nome: 'Fatura ' + c.nome, detalhe: 'vence em ' + c.vencimento, valor: faturasAbertas[i], dia: c.vencimento.slice(0, 2), destaque: true
+    })));
+    const vencimentos = venc.map(v => ({
+      nome: v.nome, detalhe: v.detalhe, valorFmt: M(v.valor), dia: v.dia,
+      pill: { width: '40px', height: '40px', borderRadius: '999px', flex: 'none', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-heading)', fontSize: '15px', background: v.destaque ? 'var(--color-accent-200)' : 'var(--color-neutral-200)', color: v.destaque ? 'var(--color-accent-900)' : 'var(--color-neutral-800)' }
+    }));
+
+    // ── divisão do casal
+    const pessoas = ['Ana', 'Bruno', 'Conjunta'];
+    const gastoPessoa = pessoas.map(p => s.transacoes.filter(t => t.tipo === 'saida' && t.pessoa === p).reduce((a, t) => a + t.valor, 0));
+    const totalPessoa = gastoPessoa.reduce((a, b) => a + b, 0) || 1;
+    const divisao = pessoas.map((p, i) => ({
+      nome: p, valorFmt: M(gastoPessoa[i]), pctFmt: this.pct((gastoPessoa[i] / totalPessoa) * 100),
+      bar: this.bar((gastoPessoa[i] / totalPessoa) * 100, i === 0 ? 'var(--color-accent)' : i === 1 ? 'var(--color-accent-2-500)' : 'var(--color-neutral-500)', 8)
+    }));
+    const acerto = 'Acerto do mês: Bruno transfere ' + M(Math.abs(gastoPessoa[0] - gastoPessoa[1]) / 2) + ' para a Ana.';
+
+    const passosDados = [
+      { titulo: 'Conecte suas contas', descricao: 'Importe um extrato CSV ou OFX de cada banco. O Raiz reconhece o formato e evita duplicidade.', cta: 'Continuar', itens: [{ titulo: 'Nubank', nota: 'extrato de agosto importado' }, { titulo: 'Itaú conjunta', nota: 'aguardando arquivo' }, { titulo: 'Poupança', nota: 'saldo manual' }] },
+      { titulo: 'Cadastre seus cartões', descricao: 'Informe limite, fechamento e vencimento para que a fatura seja montada com os lançamentos certos.', cta: 'Continuar', itens: [{ titulo: 'Fechamento', nota: 'dia em que a fatura fecha' }, { titulo: 'Vencimento', nota: 'dia do pagamento' }, { titulo: 'Limite', nota: 'usado no alerta de crédito' }] },
+      { titulo: 'Ajuste suas categorias', descricao: 'Comece com as categorias sugeridas, renomeie o que quiser e defina um limite mensal para cada uma.', cta: 'Continuar', itens: [{ titulo: '8 categorias sugeridas', nota: 'edite, exclua ou crie novas' }, { titulo: 'Limites mensais', nota: 'geram os alertas de orçamento' }, { titulo: 'Regras automáticas', nota: 'classificam pelo texto do extrato' }] },
+      { titulo: 'Cadastre assinaturas e ativos', descricao: 'Assinaturas viram previsão de saída; ativos com taxa de retorno alimentam as projeções de patrimônio.', cta: 'Ir para o painel', itens: [{ titulo: '8 assinaturas', nota: M(custoMensalAssin) + ' por mês' }, { titulo: '6 ativos', nota: 'taxa média de ' + this.pct(taxaMediaVal) + ' a.a.' }, { titulo: 'Projeções', nota: 'juros compostos mês a mês' }] }
+    ];
+    const passos = passosDados.map((p, i) => ({
+      rotulo: (i + 1) + '. ' + p.titulo,
+      pill: {
+        fontSize: '12px', padding: '6px 14px', borderRadius: '999px',
+        background: s.passo === i + 1 ? 'var(--color-accent)' : s.passo > i + 1 ? 'var(--color-accent-2-200)' : 'var(--color-neutral-200)',
+        color: s.passo === i + 1 ? 'var(--color-bg)' : 'var(--color-neutral-800)'
+      }
+    }));
+    const atual = passosDados[s.passo - 1];
+
+    const titulo = this.TITULOS[s.tela];
+    const teste = s.assinaturas.find(a => a.status === 'Teste grátis');
+
+    return {
+      go, nav, navHover: { background: 'color-mix(in srgb, var(--color-text) 6%, transparent)' },
+      dashHover: { borderColor: 'var(--color-accent)' },
+      telaKicker: titulo[0], telaTitulo: titulo[1],
+      mesLabel: this.MESES[s.mes] + ' 2026', mesNome: this.MESES[s.mes].toLowerCase(),
+      mesAnterior: () => this.setState(st => ({ mes: Math.max(0, st.mes - 1) })),
+      mesProximo: () => this.setState(st => ({ mes: Math.min(this.MESES.length - 1, st.mes + 1) })),
+
+      isDashboard: s.tela === 'dashboard', isLancamentos: s.tela === 'lancamentos',
+      isCategorias: s.tela === 'categorias', isAssinaturas: s.tela === 'assinaturas',
+      isCartoes: s.tela === 'cartoes', isInvestimentos: s.tela === 'investimentos',
+      isMetas: s.tela === 'metas', isRelatorios: s.tela === 'relatorios',
+      isContas: s.tela === 'contas', isOnboarding: s.tela === 'onboarding',
+
+      mostrarAlertas: this.props.alertasVencimento !== false,
+      alertaTexto: (teste ? teste.nome + ' sai do teste grátis em ' + teste.proximo + ' e passa a custar 49,90. ' : '') + 'A fatura do ' + s.cartoes[0].nome + ' fecha em ' + s.cartoes[0].fechamento + '.',
+
+      kpi: {
+        saldo: M(saldoContas), entradas: M(entradas), saidas: M(saidas),
+        entradasNota: '2 salários + 1 freela',
+        saidasNota: M(custoMensalAssin) + ' são assinaturas',
+        patrimonio: M(saldoContas + investido, 0), investido: M(investido, 0),
+        previsto: M(saldoContas + entradas - saidas - totalFaturas * 0.2, 0)
+      },
+      fluxo, gastoPorCategoria, vencimentos, divisao, acerto, modoCasal: casal,
+      taxaMedia: this.pct(taxaMediaVal), anos: s.anos,
+      projTotal: M(projTotalVal, 0),
+
+      lancamentos, categorias,
+      categoriasNomes: s.categorias.map(c => c.nome),
+      origens: s.contas.map(c => c.nome).concat(s.cartoes.map(c => c.nome)),
+      cartoesNomes: s.cartoes.map(c => c.nome),
+      busca: s.busca, filtroCat: s.filtroCat,
+      filtro: { todos: s.filtroTipo === 'todos', entrada: s.filtroTipo === 'entrada', saida: s.filtroTipo === 'saida' },
+      setFiltroTodos: () => this.setState({ filtroTipo: 'todos' }),
+      setFiltroEntrada: () => this.setState({ filtroTipo: 'entrada' }),
+      setFiltroSaida: () => this.setState({ filtroTipo: 'saida' }),
+      setFiltroCat: e => this.setState({ filtroCat: e.target.value }),
+      setBusca: e => this.setState({ busca: e.target.value }),
+      resumoFiltro: lancamentos.length + ' de ' + s.transacoes.length + ' lançamentos · saldo do mês ' + M(entradas - saidas),
+      recorrenciasTexto: s.transacoes.filter(t => t.rec && t.rec !== 'Nenhuma').length + ' lançamentos se repetem sozinhos a cada mês, incluindo aluguel, plano de saúde e o aporte automático.',
+      resumoCategorias: s.categorias.length + ' categorias · ' + M(porCat.reduce((a, x) => a + (x.cat.orcamento || 0), 0), 0) + ' de limite somado, ' + M(saidas, 0) + ' usados',
+      regras: [
+        { termo: 'SUPERMERC', cat: 'Alimentação', acertos: '14 lançamentos', dot: this.dot(this.corDe('Alimentação')) },
+        { termo: 'UBER / 99', cat: 'Transporte', acertos: '9 lançamentos', dot: this.dot(this.corDe('Transporte')) },
+        { termo: 'DROGA', cat: 'Saúde', acertos: '5 lançamentos', dot: this.dot(this.corDe('Saúde')) },
+        { termo: 'ASSINATURA', cat: 'Assinaturas', acertos: '8 lançamentos', dot: this.dot(this.corDe('Assinaturas')) }
+      ],
+
+      assinaturas,
+      assinaturasResumo: {
+        mensal: M(custoMensalAssin), anual: M(custoMensalAssin * 12, 0),
+        contagem: assinAtivas.length + ' / ' + (s.assinaturas.length - assinAtivas.length),
+        pctRenda: this.pct((custoMensalAssin / entradas) * 100),
+        nota: 'A mais caras por mês é ' + assinAtivas.slice().sort((a, b) => this.mensal(b) - this.mensal(a))[0].nome + '. Assinaturas anuais aparecem já divididas por 12.'
+      },
+
+      cartoes, faturaAtual,
+      cartoesResumo: s.cartoes.length + ' cartões · ' + M(totalFaturas) + ' em faturas abertas de ' + M(s.cartoes.reduce((a, c) => a + c.limite, 0), 0) + ' de limite',
+
+      donutStyle, alocacao, ativos, marcos,
+      aporteTotalFmt: M(aporteBase + s.aporteExtra, 0),
+      taxaSimulada: this.pct(taxaMediaVal + s.ajuste),
+      ajuste: s.ajuste, aporteExtra: s.aporteExtra,
+      ajusteFmt: (s.ajuste > 0 ? '+' : '') + s.ajuste.toString().replace('.', ',') + ' p.p.',
+      aporteExtraFmt: M(s.aporteExtra, 0),
+      projJurosNota: 'Do total projetado, ' + M(projTotalVal - aportado, 0) + ' vêm de juros e ' + M(aportado, 0) + ' do que você aporta.',
+      setAnos: e => this.setState({ anos: parseInt(e.target.value, 10) }),
+      setAjuste: e => this.setState({ ajuste: parseFloat(e.target.value) }),
+      setAporteExtra: e => this.setState({ aporteExtra: parseInt(e.target.value, 10) }),
+      ativosResumo: s.ativos.length + ' ativos · aporte mensal de ' + M(aporteBase, 0) + ' · taxa média ponderada de ' + this.pct(taxaMediaVal) + ' a.a.',
+
+      metas, orcamentos,
+      metasResumo: s.metas.length + ' metas ativas · ' + M(s.metas.reduce((a, m) => a + m.atual, 0), 0) + ' de ' + M(s.metas.reduce((a, m) => a + m.alvo, 0), 0) + ' acumulados',
+
+      rel: {
+        poupanca: this.pct(((entradas - saidas) / entradas) * 100),
+        fixo: M(porCat.filter(x => ['Moradia', 'Assinaturas', 'Saúde', 'Educação'].indexOf(x.cat.nome) >= 0).reduce((a, x) => a + x.gasto, 0), 0),
+        variavel: M(porCat.filter(x => ['Alimentação', 'Lazer', 'Transporte'].indexOf(x.cat.nome) >= 0).reduce((a, x) => a + x.gasto, 0), 0),
+        reserva: (18400 / (saidas || 1)).toFixed(1).replace('.', ',') + ' meses'
+      },
+      insights: [
+        { texto: 'Alimentação subiu 18% contra julho, puxada por duas compras grandes de mercado.', dot: this.dot('#d67f48') },
+        { texto: 'Assinaturas somam ' + M(custoMensalAssin) + ' por mês — 2 serviços não foram usados nos últimos 30 dias.', dot: this.dot('#f6a06b') },
+        { texto: 'Transporte ficou 24% abaixo do limite pelo terceiro mês seguido; vale reduzir o orçamento.', dot: this.dot('#645c50') },
+        { texto: 'A reserva de emergência cobre ' + (18400 / (saidas || 1)).toFixed(1).replace('.', ',') + ' meses de despesa.', dot: this.dot('#8fa073') }
+      ],
+
+      contas: s.contas.map(c => ({
+        nome: c.nome, tipo: c.tipo, dono: c.dono, saldoFmt: M(c.saldo), sync: c.sync,
+        inicial: c.nome.charAt(0),
+        mono: { width: '36px', height: '36px', borderRadius: '999px', flex: 'none', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-heading)', fontSize: '15px', background: 'var(--color-accent-2-200)', color: 'var(--color-accent-2-900)' }
+      })),
+      importacoes: [
+        { arquivo: 'nubank-2026-08.ofx', conta: 'Nubank', periodo: '01–28 de agosto', qtd: 42, auto: '38 classificados' },
+        { arquivo: 'itau-conjunta.csv', conta: 'Itaú', periodo: '01–25 de agosto', qtd: 27, auto: '24 classificados' },
+        { arquivo: 'nubank-2026-07.ofx', conta: 'Nubank', periodo: 'julho', qtd: 45, auto: '45 classificados' }
+      ],
+
+      passos, passoAtual: { numero: s.passo, titulo: atual.titulo, descricao: atual.descricao, cta: atual.cta, itens: atual.itens },
+      passoAvancar: () => s.passo === 4 ? this.setState({ tela: 'dashboard' }) : this.setState(st => ({ passo: st.passo + 1 })),
+      passoVoltar: () => this.setState(st => ({ passo: Math.max(1, st.passo - 1) })),
+
+      dialogAberto: !!s.dialog,
+      isDlgLancamento: s.dialog === 'lancamento', isDlgAssinatura: s.dialog === 'assinatura',
+      isDlgCartao: s.dialog === 'cartao', isDlgAtivo: s.dialog === 'ativo',
+      isDlgCategoria: s.dialog === 'categoria', isDlgMeta: s.dialog === 'meta',
+      isDlgImportar: s.dialog === 'importar',
+      dialogTitulo: {
+        lancamento: s.editId ? 'Editar lançamento' : 'Novo lançamento',
+        assinatura: s.editId ? 'Editar assinatura' : 'Nova assinatura',
+        cartao: s.editId ? 'Editar cartão' : 'Cadastrar cartão',
+        ativo: s.editId ? 'Editar ativo' : 'Adicionar ativo',
+        categoria: s.editId ? 'Editar categoria' : 'Nova categoria',
+        meta: s.editId ? 'Editar meta' : 'Nova meta',
+        importar: 'Importar extrato'
+      }[s.dialog] || '',
+      dialogCta: s.dialog === 'importar' ? 'Importar 42 lançamentos' : s.editId ? 'Salvar alterações' : 'Salvar',
+      form: s.form,
+      setCampo: e => { const { name, value } = e.target; this.setState(st => ({ form: Object.assign({}, st.form, { [name]: value }) })); },
+      dlg: {
+        novoLancamento: () => this.abrir('lancamento'), novaAssinatura: () => this.abrir('assinatura'),
+        novoCartao: () => this.abrir('cartao'), novoAtivo: () => this.abrir('ativo'),
+        novaCategoria: () => this.abrir('categoria'), novaMeta: () => this.abrir('meta'),
+        importar: () => this.abrir('importar'),
+        fechar: () => this.setState({ dialog: null, editId: null, form: {} }),
+        salvar: this.salvar
+      }
+    };
+  }
+}
+
+</script>
+</body>
+</html>

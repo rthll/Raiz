@@ -1,0 +1,402 @@
+// Modelo de dados do Raiz.
+//
+// Segue o "Modelo de dados sugerido" do handoff, com três decisões explicitadas:
+//
+// 1. Dinheiro é `Decimal(12,2)`, nunca `Float`. Somar centavos em ponto flutuante
+//    acumula erro, e este é um sistema financeiro.
+// 2. `Transaction` aponta para uma conta OU um cartão, nunca os dois. O protótipo
+//    guardava um campo `conta` de texto que às vezes era banco, às vezes cartão —
+//    aqui a distinção é estrutural, porque a fatura depende dela.
+// 3. `Invoice` é materializada só para guardar o estado de pagamento. O total
+//    continua sendo derivado da soma das transações do cartão na competência.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────── enums
+
+enum TipoConta {
+  CORRENTE
+  CONJUNTA
+  POUPANCA
+}
+
+enum Bandeira {
+  VISA
+  MASTERCARD
+  ELO
+  AMEX
+}
+
+enum TipoCategoria {
+  ENTRADA
+  SAIDA
+}
+
+enum TipoTransacao {
+  ENTRADA
+  SAIDA
+}
+
+/// Todo lançamento tem um responsável — o sistema é de casal/família.
+enum Responsavel {
+  ANA
+  BRUNO
+  CONJUNTA
+}
+
+enum PeriodoRecorrencia {
+  SEMANAL
+  MENSAL
+  ANUAL
+}
+
+enum PeriodoAssinatura {
+  MENSAL
+  TRIMESTRAL
+  SEMESTRAL
+  ANUAL
+}
+
+enum StatusAssinatura {
+  ATIVA
+  PAUSADA
+  TESTE
+}
+
+enum ClasseAtivo {
+  RENDA_FIXA
+  FUNDOS_IMOBILIARIOS
+  ACOES_EXTERIOR
+  ACOES_BRASIL
+  CRIPTO
+}
+
+// ─────────────────────────────────────────────────────── household e usuário
+
+/// A unidade de compartilhamento: tudo pertence a um household, nunca a um usuário
+/// solto. É o escopo que toda query da API precisa filtrar.
+model Household {
+  id       String   @id @default(cuid())
+  nome     String
+  criadoEm DateTime @default(now())
+
+  users         User[]
+  accounts      Account[]
+  cards         Card[]
+  categories    Category[]
+  transactions  Transaction[]
+  recurrences   Recurrence[]
+  subscriptions Subscription[]
+  assets        Asset[]
+  goals         Goal[]
+  rules         Rule[]
+  imports       Import[]
+
+  @@map("households")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  senhaHash    String
+  nome         String
+  householdId  String
+  /// modoPrivacidade, modoCasal, alertasVencimento — as flags que no protótipo
+  /// eram props tweakáveis.
+  preferencias Json     @default("{}")
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  household     Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  refreshTokens RefreshToken[]
+
+  @@index([householdId])
+  @@map("users")
+}
+
+/// Refresh token emitido para uma sessão. Guardamos o hash, nunca o token: um
+/// dump do banco não pode virar sessão de ninguém.
+///
+/// Persistir (em vez de só assinar um JWT) é o que permite logout de verdade e
+/// rotação — cada refresh revoga o anterior e emite um novo.
+model RefreshToken {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  expiraEm   DateTime
+  revogadoEm DateTime?
+  criadoEm   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiraEm])
+  @@map("refresh_tokens")
+}
+
+// ───────────────────────────────────────────────────────── contas e cartões
+
+model Account {
+  id          String    @id @default(cuid())
+  householdId String
+  nome        String
+  tipo        TipoConta
+  /// Texto livre: "Ana", "Ana e Bruno", "Conjunta".
+  dono        String
+  saldo       Decimal   @db.Decimal(12, 2)
+  ultimaSync  DateTime?
+
+  household    Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  imports      Import[]
+
+  @@unique([householdId, nome])
+  @@index([householdId])
+  @@map("accounts")
+}
+
+model Card {
+  id            String   @id @default(cuid())
+  householdId   String
+  nome          String
+  bandeira      Bandeira
+  /// Os 4 últimos dígitos. String, não Int — "0042" precisa manter os zeros.
+  final         String
+  limite        Decimal  @db.Decimal(12, 2)
+  diaFechamento Int
+  diaVencimento Int
+  /// O primeiro cartão da tela é escuro (fundo --color-accent-900).
+  temaEscuro    Boolean  @default(false)
+  ordem         Int      @default(0)
+
+  household     Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  transactions  Transaction[]
+  subscriptions Subscription[]
+  invoices      Invoice[]
+
+  @@unique([householdId, nome])
+  @@index([householdId])
+  @@map("cards")
+}
+
+// ───────────────────────────────────────────────────────────── categorias
+
+model Category {
+  id              String        @id @default(cuid())
+  householdId     String
+  nome            String
+  tipo            TipoCategoria
+  /// Hex das cores de dados do design system (DATA_COLORS em @raiz/core).
+  cor             String
+  /// Limite mensal. Null = "sem limite" — que é diferente de limite zero.
+  orcamentoMensal Decimal?      @db.Decimal(12, 2)
+  ordem           Int           @default(0)
+
+  household     Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  transactions  Transaction[]
+  subscriptions Subscription[]
+  recurrences   Recurrence[]
+  rules         Rule[]
+
+  @@unique([householdId, nome])
+  @@index([householdId])
+  @@map("categories")
+}
+
+// ─────────────────────────────────────────────────────────── lançamentos
+
+model Transaction {
+  id          String        @id @default(cuid())
+  householdId String
+  data        DateTime      @db.Date
+  descricao   String
+  valor       Decimal       @db.Decimal(12, 2)
+  tipo        TipoTransacao
+  categoriaId String
+  /// Conta OU cartão — a checagem de exclusividade está na constraint abaixo.
+  accountId   String?
+  cardId      String?
+  responsavel Responsavel
+
+  parcelaAtual Int?
+  parcelaTotal Int?
+
+  recurrenceId String?
+  importId     String?
+
+  /// Chave de dedupe da importação: conta + data + centavos + descrição normalizada.
+  /// Ver transactionFingerprint() em @raiz/core.
+  fingerprint String?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  household  Household   @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  categoria  Category    @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  account    Account?    @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  card       Card?       @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  recurrence Recurrence? @relation(fields: [recurrenceId], references: [id], onDelete: SetNull)
+  importacao Import?     @relation(fields: [importId], references: [id], onDelete: SetNull)
+
+  @@unique([householdId, fingerprint])
+  @@index([householdId, data])
+  @@index([householdId, categoriaId])
+  @@index([cardId, data])
+  @@index([accountId, data])
+  @@map("transactions")
+}
+
+/// Um lançamento que se repete sozinho. O job diário lê `proximaData` e cria a
+/// próxima `Transaction`.
+model Recurrence {
+  id          String             @id @default(cuid())
+  householdId String
+  descricao   String
+  valor       Decimal            @db.Decimal(12, 2)
+  periodo     PeriodoRecorrencia
+  proximaData DateTime           @db.Date
+  categoriaId String
+  ativa       Boolean            @default(true)
+
+  household    Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  categoria    Category      @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+  transactions Transaction[]
+
+  @@index([householdId])
+  @@index([ativa, proximaData])
+  @@map("recurrences")
+}
+
+// ───────────────────────────────────────────────────────────── assinaturas
+
+model Subscription {
+  id            String            @id @default(cuid())
+  householdId   String
+  nome          String
+  valor         Decimal           @db.Decimal(12, 2)
+  periodo       PeriodoAssinatura
+  proximoDebito DateTime          @db.Date
+  cardId        String?
+  categoriaId   String
+  status        StatusAssinatura  @default(ATIVA)
+  observacao    String?
+  /// Guardado para avisar quando um teste grátis vira cobrança.
+  precoAnterior Decimal?          @db.Decimal(12, 2)
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  card      Card?     @relation(fields: [cardId], references: [id], onDelete: SetNull)
+  categoria Category  @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+
+  @@index([householdId])
+  @@index([cardId])
+  @@index([status, proximoDebito])
+  @@map("subscriptions")
+}
+
+// ───────────────────────────────────────────────────────────────── faturas
+
+/// Existe para guardar o estado de pagamento por competência. O `total` é um
+/// cache do somatório das transações do cartão no período — a soma continua
+/// sendo a fonte da verdade.
+model Invoice {
+  id          String    @id @default(cuid())
+  cardId      String
+  /// Competência no formato YYYY-MM.
+  competencia String
+  fechamento  DateTime  @db.Date
+  vencimento  DateTime  @db.Date
+  total       Decimal   @db.Decimal(12, 2)
+  paga        Boolean   @default(false)
+  pagaEm      DateTime?
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, competencia])
+  @@index([cardId])
+  @@map("invoices")
+}
+
+// ─────────────────────────────────────────────────────────── investimentos
+
+model Asset {
+  id           String      @id @default(cuid())
+  householdId  String
+  nome         String
+  classe       ClasseAtivo
+  valor        Decimal     @db.Decimal(14, 2)
+  /// Taxa anual em pontos percentuais: 11.2 = 11,2% a.a.
+  taxaAnual    Decimal     @db.Decimal(6, 2)
+  aporteMensal Decimal     @db.Decimal(12, 2)
+  /// Meta de rentabilidade, também em pontos percentuais.
+  metaTaxa     Decimal     @db.Decimal(6, 2)
+  ordem        Int         @default(0)
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@index([householdId])
+  @@map("assets")
+}
+
+// ──────────────────────────────────────────────────────────────────── metas
+
+model Goal {
+  id          String  @id @default(cuid())
+  householdId String
+  nome        String
+  alvo        Decimal @db.Decimal(14, 2)
+  atual       Decimal @db.Decimal(14, 2)
+  prazoMeses  Int
+  ordem       Int     @default(0)
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@index([householdId])
+  @@map("goals")
+}
+
+// ────────────────────────────────────────────── regras e importações
+
+/// Classificação automática: se a descrição do extrato contém `termo`, o
+/// lançamento cai em `categoria`.
+model Rule {
+  id          String @id @default(cuid())
+  householdId String
+  termo       String
+  categoriaId String
+  /// Quantos lançamentos a regra já classificou.
+  acertos     Int    @default(0)
+  ordem       Int    @default(0)
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  categoria Category  @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+
+  @@index([householdId])
+  @@map("rules")
+}
+
+model Import {
+  id            String   @id @default(cuid())
+  householdId   String
+  accountId     String
+  arquivo       String
+  periodoInicio DateTime @db.Date
+  periodoFim    DateTime @db.Date
+  /// Quantos lançamentos o arquivo trouxe e quantos as regras classificaram.
+  quantidade    Int
+  classificados Int
+  criadoEm      DateTime @default(now())
+
+  household    Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  account      Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([householdId])
+  @@map("imports")
+}
