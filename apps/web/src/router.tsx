@@ -1,22 +1,35 @@
 import { createBrowserRouter } from 'react-router-dom';
-import { SCREENS } from './navigation.js';
-import { EmConstrucao } from './screens/EmConstrucao.js';
+import { Assinaturas } from './screens/Assinaturas.js';
+import { Cartoes } from './screens/Cartoes.js';
+import { Categorias } from './screens/Categorias.js';
+import { Contas } from './screens/Contas.js';
+import { Dashboard } from './screens/Dashboard.js';
+import { Investimentos } from './screens/Investimentos.js';
 import { KitchenSink } from './screens/KitchenSink.js';
+import { Lancamentos } from './screens/Lancamentos.js';
+import { Metas } from './screens/Metas.js';
+import { Onboarding } from './screens/Onboarding.js';
+import { Relatorios } from './screens/Relatorios.js';
 import { AppShell } from './shell/AppShell.js';
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <AppShell />,
-    children: SCREENS.map((tela) => ({
-      // A rota do dashboard é a index do shell.
-      index: tela.path === '/',
-      path: tela.path === '/' ? undefined : tela.path.slice(1),
-      element: <EmConstrucao />,
-    })).concat([
-      // Vitrine do design system. Fora da navegacao: e ferramenta de
-      // desenvolvimento, nao uma tela do produto.
-      { index: false, path: 'design-system', element: <KitchenSink /> },
-    ]),
+    children: [
+      { index: true, element: <Dashboard /> },
+      { path: 'lancamentos', element: <Lancamentos /> },
+      { path: 'categorias', element: <Categorias /> },
+      { path: 'assinaturas', element: <Assinaturas /> },
+      { path: 'cartoes', element: <Cartoes /> },
+      { path: 'investimentos', element: <Investimentos /> },
+      { path: 'metas', element: <Metas /> },
+      { path: 'relatorios', element: <Relatorios /> },
+      { path: 'contas', element: <Contas /> },
+      { path: 'onboarding', element: <Onboarding /> },
+      // Vitrine do design system. Fora da navegação: é ferramenta de
+      // desenvolvimento, não uma tela do produto.
+      { path: 'design-system', element: <KitchenSink /> },
+    ],
   },
 ]);

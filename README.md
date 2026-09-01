@@ -144,7 +144,7 @@ componente vai em CSS Modules em cima de `var(--space-*)`.
 - [x] **Etapa 2** — `packages/ui`: componentes do design system + shell responsivo definitivo
 - [x] **Etapa 3** — Backend: schema Prisma, migrations, seed com os dados do protótipo
 - [x] **Etapa 4** — Backend: auth + CRUD + endpoints agregados
-- [ ] **Etapa 5** — As 10 telas, em 4 ondas
+- [x] **Etapa 5** — As 10 telas, em 4 ondas
 - [ ] **Etapa 6** — Diálogos, validação e estados (vazio, carregando, erro, confirmação)
 - [ ] **Etapa 7** — Importação CSV/OFX, regras automáticas, recorrências
 - [ ] **Etapa 8** — Responsivo em aparelho real, acessibilidade, performance
