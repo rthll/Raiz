@@ -102,18 +102,22 @@ há banco alcançável.
 
 ## Importação de extrato
 
- lê CSV e OFX reconhecendo as variações comuns dos bancos
-brasileiros: separador  ou , cabeçalhos com nomes diferentes, três formatos de data,
-valor em pt-BR ou en-US, e débito/crédito em colunas separadas. Linha ilegível é pulada com o
-motivo, não derruba o arquivo inteiro.
+`apps/api/src/import/parsers.ts` lê CSV e OFX reconhecendo as variações comuns dos bancos
+brasileiros: separador `;` ou `,`, cabeçalhos com nomes diferentes, três formatos de data, valor
+em pt-BR ou en-US, e débito/crédito em colunas separadas. Linha ilegível é pulada com o motivo,
+sem derrubar o arquivo inteiro.
 
-O fluxo é **analisar e depois gravar**:  diz o que entraria (com
-duplicatas marcadas e categorias sugeridas pelas regras) sem escrever nada;  grava o
+O fluxo é **analisar e depois gravar**: `POST /api/imports/preview` diz o que entraria — com
+duplicatas marcadas e categorias sugeridas pelas regras — sem escrever nada; `/confirm` grava o
 que a pessoa aprovou. Importar às cegas um extrato de 200 linhas é difícil de desfazer.
 
-O cron diário (, protegido por ) gera os lançamentos
-recorrentes, levanta alertas de teste grátis e fatura fechando, e limpa refresh tokens vencidos.
-É idempotente: rodar duas vezes no mesmo dia não duplica nada.
+O cron diário (`POST /api/cron/daily`, protegido por `CRON_SECRET`) gera os lançamentos
+recorrentes atrasados, levanta alertas de teste grátis e fatura fechando (D-3), e limpa refresh
+tokens vencidos. É idempotente: rodar duas vezes no mesmo dia não duplica nada.
+
+Uma armadilha registrada em `importar.ts`: no Postgres, uma statement que viola constraint aborta
+a transação inteira (SQLSTATE 25P02), e um `try/catch` por linha não desfaz isso. A gravação
+filtra as duplicatas antes e usa `createMany` com `skipDuplicates`.
 
 ## Vitrine do design system
 
