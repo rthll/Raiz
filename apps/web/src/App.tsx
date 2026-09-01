@@ -4,6 +4,7 @@ import { AuthProvider, usePreferencias, useAuth } from './auth/AuthProvider.js';
 import { Login } from './auth/Login.js';
 import { router } from './router.js';
 import { CompetenciaProvider } from './state/competencia.js';
+import { ToasterProvider } from './ui/Toaster.js';
 
 /**
  * Portão de sessão.
@@ -31,9 +32,11 @@ function Portao() {
 
   return (
     <PrivacyProvider ativo={modoPrivacidade}>
-      <CompetenciaProvider>
-        <RouterProvider router={router} />
-      </CompetenciaProvider>
+      <ToasterProvider>
+        <CompetenciaProvider>
+          <RouterProvider router={router} />
+        </CompetenciaProvider>
+      </ToasterProvider>
     </PrivacyProvider>
   );
 }

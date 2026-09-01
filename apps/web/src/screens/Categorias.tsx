@@ -14,6 +14,9 @@ import {
   SkeletonCard,
 } from '@raiz/ui';
 import { useCategorias, useOrcamentos, useRegras } from '../api/hooks.js';
+import type { Categoria } from '../api/types.js';
+import { CategoriaDialog } from '../dialogs/CategoriaDialog.js';
+import { useCrud } from '../dialogs/useCrud.js';
 import { useCompetencia } from '../state/competencia.js';
 import { TelaHeader } from '../shell/TelaHeader.js';
 
@@ -23,6 +26,8 @@ export function Categorias() {
   const orcamentos = useOrcamentos(mes);
   const regras = useRegras();
 
+  const crud = useCrud<Categoria>('categories', { singular: 'Categoria', artigo: 'a' });
+
   const usoPorCategoria = new Map(orcamentos.data?.itens.map((i) => [i.categoria.id, i]) ?? []);
 
   const resumo = orcamentos.data
@@ -31,7 +36,13 @@ export function Categorias() {
 
   return (
     <>
-      <TelaHeader acoes={<Button variant="primary">Nova categoria</Button>} />
+      <TelaHeader
+        acoes={
+          <Button variant="primary" onClick={crud.abrirNovo}>
+            Nova categoria
+          </Button>
+        }
+      />
 
       {resumo && <CardMeta style={{ marginBottom: 'var(--space-3)' }}>{resumo}</CardMeta>}
 
@@ -49,7 +60,11 @@ export function Categorias() {
         <EmptyState
           titulo="Nenhuma categoria ainda"
           descricao="Categorias organizam os lançamentos e geram os alertas de orçamento."
-          acao={<Button variant="primary">Nova categoria</Button>}
+          acao={
+            <Button variant="primary" onClick={crud.abrirNovo}>
+              Nova categoria
+            </Button>
+          }
         />
       )}
 
@@ -105,8 +120,14 @@ export function Categorias() {
                 </CardMeta>
 
                 <div className="raiz-row">
-                  <Button variant="secondary">Editar</Button>
-                  <Button variant="ghost" style={{ color: 'var(--color-neutral-700)' }}>
+                  <Button variant="secondary" onClick={() => crud.abrirEdicao(categoria)}>
+                    Editar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    style={{ color: 'var(--color-neutral-700)' }}
+                    onClick={() => crud.pedirExclusao(categoria)}
+                  >
                     Excluir
                   </Button>
                 </div>
@@ -151,6 +172,13 @@ export function Categorias() {
           </div>
         </Card>
       )}
+
+      <CategoriaDialog
+        aberto={crud.dialogoAberto}
+        editando={crud.editando}
+        onFechar={crud.fechar}
+      />
+      {crud.confirmacao}
     </>
   );
 }

@@ -24,7 +24,9 @@ import {
 } from '@raiz/ui';
 import { useMemo, useState } from 'react';
 import { useAtivos } from '../api/hooks.js';
-import type { ClasseAtivo } from '../api/types.js';
+import type { Ativo, ClasseAtivo } from '../api/types.js';
+import { AtivoDialog } from '../dialogs/AtivoDialog.js';
+import { useCrud } from '../dialogs/useCrud.js';
 import { TelaHeader } from '../shell/TelaHeader.js';
 
 /** Nome legível de cada classe. O enum do banco é SCREAMING_SNAKE. */
@@ -41,6 +43,7 @@ export function Investimentos() {
   const [anos, setAnos] = useState(10);
   const [ajusteTaxa, setAjusteTaxa] = useState(0);
   const [aporteExtra, setAporteExtra] = useState(0);
+  const crud = useCrud<Ativo>('assets', { singular: 'Ativo', artigo: 'o' });
 
   /**
    * A projeção é calculada **local**, com a mesma `@raiz/core` que a API usa.
@@ -94,11 +97,21 @@ export function Investimentos() {
   if (!ativos.data || ativos.data.length === 0) {
     return (
       <>
-        <TelaHeader acoes={<Button variant="primary">Adicionar ativo</Button>} />
+        <TelaHeader
+          acoes={
+            <Button variant="primary" onClick={crud.abrirNovo}>
+              Adicionar ativo
+            </Button>
+          }
+        />
         <EmptyState
           titulo="Nenhum ativo cadastrado"
           descricao="Ativos com taxa de retorno alimentam as projeções de patrimônio."
-          acao={<Button variant="primary">Adicionar ativo</Button>}
+          acao={
+            <Button variant="primary" onClick={crud.abrirNovo}>
+              Adicionar ativo
+            </Button>
+          }
         />
       </>
     );
@@ -106,7 +119,14 @@ export function Investimentos() {
 
   return (
     <>
-      <TelaHeader semMes acoes={<Button variant="primary">Adicionar ativo</Button>} />
+      <TelaHeader
+        semMes
+        acoes={
+          <Button variant="primary" onClick={crud.abrirNovo}>
+            Adicionar ativo
+          </Button>
+        }
+      />
 
       <CardMeta style={{ marginBottom: 'var(--space-3)' }}>
         {ativos.data.length} ativos · aporte mensal de{' '}
@@ -253,8 +273,14 @@ export function Investimentos() {
                   </TdNumero>
                   <td>
                     <span className="raiz-row" style={{ flexWrap: 'nowrap' }}>
-                      <Button variant="ghost">Editar</Button>
-                      <Button variant="ghost" style={{ color: 'var(--color-neutral-700)' }}>
+                      <Button variant="ghost" onClick={() => crud.abrirEdicao(ativo)}>
+                        Editar
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        style={{ color: 'var(--color-neutral-700)' }}
+                        onClick={() => crud.pedirExclusao(ativo)}
+                      >
                         Excluir
                       </Button>
                     </span>
@@ -265,6 +291,9 @@ export function Investimentos() {
           </tbody>
         </Table>
       </Card>
+
+      <AtivoDialog aberto={crud.dialogoAberto} editando={crud.editando} onFechar={crud.fechar} />
+      {crud.confirmacao}
     </>
   );
 }

@@ -138,7 +138,7 @@ componente vai em CSS Modules em cima de `var(--space-*)`.
 - [x] **Etapa 3** — Backend: schema Prisma, migrations, seed com os dados do protótipo
 - [x] **Etapa 4** — Backend: auth + CRUD + endpoints agregados
 - [x] **Etapa 5** — As 10 telas, em 4 ondas
-- [ ] **Etapa 6** — Diálogos, validação e estados (vazio, carregando, erro, confirmação)
-- [ ] **Etapa 7** — Importação CSV/OFX, regras automáticas, recorrências
+- [x] **Etapa 6** — Diálogos, validação e estados (vazio, carregando, erro, confirmação)
+- [ ] **Etapa 7** — Importação CSV/OFX (inclui o 7º diálogo), regras automáticas, recorrências
 - [ ] **Etapa 8** — Responsivo em aparelho real, acessibilidade, performance
 - [ ] **Etapa 9** — Produção: env, migrations no deploy, domínio, QA contra os screenshots

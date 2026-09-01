@@ -14,7 +14,9 @@ import {
   Monogram,
   SkeletonCard,
 } from '@raiz/ui';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LancamentoDialog } from '../dialogs/LancamentoDialog.js';
 import { useCashflow, useDashboard } from '../api/hooks.js';
 import type { Dashboard as DashboardDTO } from '../api/types.js';
 import { usePreferencias } from '../auth/AuthProvider.js';
@@ -34,6 +36,8 @@ export function Dashboard() {
   const { modoCasal, alertasVencimento } = usePreferencias();
   const navigate = useNavigate();
 
+  const [novoLancamento, setNovoLancamento] = useState(false);
+
   const dashboard = useDashboard(mes);
   const cashflow = useCashflow(mes, 8);
 
@@ -45,7 +49,7 @@ export function Dashboard() {
             <Button variant="secondary" onClick={() => navigate('/contas')}>
               Importar CSV/OFX
             </Button>
-            <Button variant="primary" onClick={() => navigate('/lancamentos')}>
+            <Button variant="primary" onClick={() => setNovoLancamento(true)}>
               Novo lançamento
             </Button>
           </>
@@ -99,6 +103,12 @@ export function Dashboard() {
           </div>
         </div>
       )}
+
+      <LancamentoDialog
+        aberto={novoLancamento}
+        dataPadrao={`${mes}-01`}
+        onFechar={() => setNovoLancamento(false)}
+      />
     </>
   );
 }

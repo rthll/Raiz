@@ -276,3 +276,41 @@ describe('competência e filtros', () => {
     }
   });
 });
+
+describe('campos numéricos opcionais', () => {
+  const base = {
+    descricao: 'Compra',
+    valor: 100,
+    data: '2026-08-08',
+    tipo: 'SAIDA',
+    categoriaId: 'k1',
+    accountId: 'b1',
+    responsavel: 'ANA',
+  };
+
+  it('aceita parcela em branco — o caso da maioria dos lançamentos', () => {
+    // Um <input> vazio manda '', e z.coerce.number('') dá 0, que não é positivo.
+    // Sem o preprocess, deixar o campo em branco impediria salvar.
+    const r = lancamentoSchema.safeParse({ ...base, parcelaAtual: '', parcelaTotal: '' });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.parcelaAtual).toBeNull();
+      expect(r.data.parcelaTotal).toBeNull();
+    }
+  });
+
+  it('aceita parcela ausente, nula e preenchida', () => {
+    expect(lancamentoSchema.safeParse(base).success).toBe(true);
+    expect(
+      lancamentoSchema.safeParse({ ...base, parcelaAtual: null, parcelaTotal: null }).success,
+    ).toBe(true);
+    const r = lancamentoSchema.safeParse({ ...base, parcelaAtual: '3', parcelaTotal: '10' });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.parcelaAtual).toBe(3);
+  });
+
+  it('continua recusando parcela zero ou negativa', () => {
+    expect(lancamentoSchema.safeParse({ ...base, parcelaTotal: '0' }).success).toBe(false);
+    expect(lancamentoSchema.safeParse({ ...base, parcelaTotal: '-2' }).success).toBe(false);
+  });
+});

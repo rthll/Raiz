@@ -12,7 +12,9 @@ import {
   SkeletonCard,
 } from '@raiz/ui';
 import { useContas } from '../api/hooks.js';
-import type { TipoConta } from '../api/types.js';
+import type { Conta, TipoConta } from '../api/types.js';
+import { ContaDialog } from '../dialogs/ContaDialog.js';
+import { useCrud } from '../dialogs/useCrud.js';
 import { TelaHeader } from '../shell/TelaHeader.js';
 
 const ROTULO_TIPO: Record<TipoConta, string> = {
@@ -35,11 +37,20 @@ function desde(iso: string | null): string {
 
 export function Contas() {
   const contas = useContas();
+  const crud = useCrud<Conta>('accounts', { singular: 'Conta', artigo: 'a' });
+
   const saldoTotal = contas.data?.reduce((a, c) => a + c.saldo, 0) ?? 0;
 
   return (
     <>
-      <TelaHeader semMes acoes={<Button variant="primary">Nova conta</Button>} />
+      <TelaHeader
+        semMes
+        acoes={
+          <Button variant="primary" onClick={crud.abrirNovo}>
+            Nova conta
+          </Button>
+        }
+      />
 
       {contas.data && contas.data.length > 0 && (
         <CardMeta style={{ marginBottom: 'var(--space-3)' }}>
@@ -62,7 +73,11 @@ export function Contas() {
         <EmptyState
           titulo="Nenhuma conta conectada"
           descricao="Importe um extrato CSV ou OFX de cada banco para começar."
-          acao={<Button variant="primary">Nova conta</Button>}
+          acao={
+            <Button variant="primary" onClick={crud.abrirNovo}>
+              Nova conta
+            </Button>
+          }
         />
       )}
 
@@ -93,8 +108,14 @@ export function Contas() {
               <CardMeta>último extrato importado {desde(conta.ultimaSync)}</CardMeta>
 
               <div className="raiz-row">
-                <Button variant="secondary">Editar</Button>
-                <Button variant="ghost" style={{ color: 'var(--color-neutral-700)' }}>
+                <Button variant="secondary" onClick={() => crud.abrirEdicao(conta)}>
+                  Editar
+                </Button>
+                <Button
+                  variant="ghost"
+                  style={{ color: 'var(--color-neutral-700)' }}
+                  onClick={() => crud.pedirExclusao(conta)}
+                >
                   Excluir
                 </Button>
               </div>
@@ -113,6 +134,9 @@ export function Contas() {
           </button>
         </div>
       )}
+
+      <ContaDialog aberto={crud.dialogoAberto} editando={crud.editando} onFechar={crud.fechar} />
+      {crud.confirmacao}
     </>
   );
 }

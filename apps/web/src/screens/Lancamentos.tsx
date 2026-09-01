@@ -18,6 +18,8 @@ import {
   ThNumero,
 } from '@raiz/ui';
 import { useMemo, useState } from 'react';
+import { LancamentoDialog } from '../dialogs/LancamentoDialog.js';
+import { useCrud } from '../dialogs/useCrud.js';
 import { useCartoes, useCategorias, useContas, useLancamentos } from '../api/hooks.js';
 import type { Lancamento } from '../api/types.js';
 import { usePreferencias } from '../auth/AuthProvider.js';
@@ -55,12 +57,20 @@ export function Lancamentos() {
     return (id: string) => mapa.get(id);
   }, [categorias.data]);
 
+  const crud = useCrud<Lancamento>('transactions', { singular: 'Lançamento', artigo: 'o' });
+
   const temFiltro = tipo !== 'todos' || !!categoriaId || !!busca;
   const recorrentes = lista.data?.itens.filter((l) => l.recorrente).length ?? 0;
 
   return (
     <>
-      <TelaHeader acoes={<Button variant="primary">Novo lançamento</Button>} />
+      <TelaHeader
+        acoes={
+          <Button variant="primary" onClick={crud.abrirNovo}>
+            Novo lançamento
+          </Button>
+        }
+      />
 
       <Card style={{ marginBottom: 'var(--space-3)' }}>
         <div className="raiz-row">
@@ -137,7 +147,9 @@ export function Lancamentos() {
                 Limpar filtros
               </Button>
             ) : (
-              <Button variant="primary">Novo lançamento</Button>
+              <Button variant="primary" onClick={crud.abrirNovo}>
+                Novo lançamento
+              </Button>
             )
           }
         />
@@ -194,8 +206,14 @@ export function Lancamentos() {
                     </TdNumero>
                     <td>
                       <span className="raiz-row" style={{ flexWrap: 'nowrap' }}>
-                        <Button variant="ghost">Editar</Button>
-                        <Button variant="ghost" style={{ color: 'var(--color-neutral-700)' }}>
+                        <Button variant="ghost" onClick={() => crud.abrirEdicao(l)}>
+                          Editar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          style={{ color: 'var(--color-neutral-700)' }}
+                          onClick={() => crud.pedirExclusao(l)}
+                        >
                           Excluir
                         </Button>
                       </span>
@@ -220,6 +238,14 @@ export function Lancamentos() {
           </div>
         </Card>
       )}
+
+      <LancamentoDialog
+        aberto={crud.dialogoAberto}
+        editando={crud.editando}
+        dataPadrao={`${mes}-01`}
+        onFechar={crud.fechar}
+      />
+      {crud.confirmacao}
     </>
   );
 }

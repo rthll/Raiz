@@ -118,9 +118,15 @@ export function Dialog({ aberto, titulo, onFechar, acoes, children, largura = 54
         style={{ width: `min(${largura}px, 100%)`, maxHeight: '90dvh', overflowY: 'auto' }}
         onKeyDown={onKeyDown}
       >
-        <div className="dialog-title" id={tituloId}>
+        {/*
+          Heading de verdade, não uma div estilizada: quem navega por leitor de
+          tela salta de heading em heading, e o título do diálogo é o primeiro
+          ponto de referência ao entrar nele. `margin: 0` porque o `.dialog` já
+          separa os filhos por `gap`.
+        */}
+        <h2 className="dialog-title" id={tituloId} style={{ margin: 0 }}>
           {titulo}
-        </div>
+        </h2>
         {children}
         {acoes && <div className="dialog-actions">{acoes}</div>}
       </div>

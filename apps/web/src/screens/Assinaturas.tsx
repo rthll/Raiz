@@ -19,7 +19,9 @@ import {
   useCategorias,
   useResumoAssinaturas,
 } from '../api/hooks.js';
-import type { StatusAssinatura } from '../api/types.js';
+import type { Assinatura, StatusAssinatura } from '../api/types.js';
+import { AssinaturaDialog } from '../dialogs/AssinaturaDialog.js';
+import { useCrud } from '../dialogs/useCrud.js';
 import { useCompetencia } from '../state/competencia.js';
 import { TelaHeader } from '../shell/TelaHeader.js';
 
@@ -46,13 +48,21 @@ export function Assinaturas() {
   const categorias = useCategorias();
   const alternar = useAlternarAssinatura();
 
+  const crud = useCrud<Assinatura>('subscriptions', { singular: 'Assinatura', artigo: 'a' });
+
   const nomeCartao = (id: string | null) =>
     cartoes.data?.find((c) => c.id === id)?.nome ?? 'sem cartão';
   const nomeCategoria = (id: string) => categorias.data?.find((c) => c.id === id)?.nome ?? '—';
 
   return (
     <>
-      <TelaHeader acoes={<Button variant="primary">Nova assinatura</Button>} />
+      <TelaHeader
+        acoes={
+          <Button variant="primary" onClick={crud.abrirNovo}>
+            Nova assinatura
+          </Button>
+        }
+      />
 
       {resumo.data && (
         <div className="raiz-grid raiz-grid-kpi" style={{ marginBottom: 'var(--space-3)' }}>
@@ -104,7 +114,11 @@ export function Assinaturas() {
         <EmptyState
           titulo="Nenhuma assinatura cadastrada"
           descricao="Assinaturas viram previsão de saída e alimentam o alerta de teste grátis."
-          acao={<Button variant="primary">Nova assinatura</Button>}
+          acao={
+            <Button variant="primary" onClick={crud.abrirNovo}>
+              Nova assinatura
+            </Button>
+          }
         />
       )}
 
@@ -169,7 +183,9 @@ export function Assinaturas() {
                 )}
 
                 <div className="raiz-row">
-                  <Button variant="secondary">Editar</Button>
+                  <Button variant="secondary" onClick={() => crud.abrirEdicao(a)}>
+                    Editar
+                  </Button>
                   <Button
                     variant="secondary"
                     disabled={alternar.isPending}
@@ -177,7 +193,11 @@ export function Assinaturas() {
                   >
                     {pausada ? 'Reativar' : 'Pausar'}
                   </Button>
-                  <Button variant="ghost" style={{ color: 'var(--color-neutral-700)' }}>
+                  <Button
+                    variant="ghost"
+                    style={{ color: 'var(--color-neutral-700)' }}
+                    onClick={() => crud.pedirExclusao(a)}
+                  >
                     Excluir
                   </Button>
                 </div>
@@ -186,6 +206,14 @@ export function Assinaturas() {
           })}
         </div>
       )}
+
+      <AssinaturaDialog
+        aberto={crud.dialogoAberto}
+        editando={crud.editando}
+        dataPadrao={`${mes}-01`}
+        onFechar={crud.fechar}
+      />
+      {crud.confirmacao}
     </>
   );
 }

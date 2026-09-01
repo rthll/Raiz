@@ -14,6 +14,9 @@ import {
   SkeletonCard,
 } from '@raiz/ui';
 import { useMetas, useOrcamentos } from '../api/hooks.js';
+import type { Meta } from '../api/types.js';
+import { MetaDialog } from '../dialogs/MetaDialog.js';
+import { useCrud } from '../dialogs/useCrud.js';
 import { useCompetencia } from '../state/competencia.js';
 import { TelaHeader } from '../shell/TelaHeader.js';
 
@@ -22,12 +25,20 @@ export function Metas() {
   const metas = useMetas();
   const orcamentos = useOrcamentos(mes);
 
+  const crud = useCrud<Meta>('goals', { singular: 'Meta', artigo: 'a' });
+
   const acumulado = metas.data?.reduce((a, m) => a + m.atual, 0) ?? 0;
   const alvoTotal = metas.data?.reduce((a, m) => a + m.alvo, 0) ?? 0;
 
   return (
     <>
-      <TelaHeader acoes={<Button variant="primary">Nova meta</Button>} />
+      <TelaHeader
+        acoes={
+          <Button variant="primary" onClick={crud.abrirNovo}>
+            Nova meta
+          </Button>
+        }
+      />
 
       {metas.data && metas.data.length > 0 && (
         <CardMeta style={{ marginBottom: 'var(--space-3)' }}>
@@ -50,7 +61,11 @@ export function Metas() {
         <EmptyState
           titulo="Nenhuma meta definida"
           descricao="Metas mostram quanto guardar por mês para chegar onde você quer."
-          acao={<Button variant="primary">Nova meta</Button>}
+          acao={
+            <Button variant="primary" onClick={crud.abrirNovo}>
+              Nova meta
+            </Button>
+          }
         />
       )}
 
@@ -89,8 +104,14 @@ export function Metas() {
               </div>
 
               <div className="raiz-row">
-                <Button variant="secondary">Editar</Button>
-                <Button variant="ghost" style={{ color: 'var(--color-neutral-700)' }}>
+                <Button variant="secondary" onClick={() => crud.abrirEdicao(meta)}>
+                  Editar
+                </Button>
+                <Button
+                  variant="ghost"
+                  style={{ color: 'var(--color-neutral-700)' }}
+                  onClick={() => crud.pedirExclusao(meta)}
+                >
                   Excluir
                 </Button>
               </div>
@@ -143,6 +164,9 @@ export function Metas() {
           </div>
         </Card>
       )}
+
+      <MetaDialog aberto={crud.dialogoAberto} editando={crud.editando} onFechar={crud.fechar} />
+      {crud.confirmacao}
     </>
   );
 }

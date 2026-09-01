@@ -47,6 +47,18 @@ export const taxaPercentual = z
   .transform((v) => (typeof v === 'number' ? v : parseBRL(v)))
   .pipe(z.number().finite().min(-100, 'Mínimo −100%.').max(100, 'Máximo 100%.'));
 
+/**
+ * Inteiro positivo opcional.
+ *
+ * O `preprocess` existe porque um `<input>` vazio manda `''`, e `z.coerce.number('')`
+ * devolve **0** — que então falha no `.positive()`. Sem isto, deixar o campo de
+ * parcela em branco impediria salvar o lançamento.
+ */
+export const inteiroPositivoOpcional = z.preprocess(
+  (v) => (v === '' || v === null || v === undefined ? null : v),
+  z.coerce.number().int('Use um número inteiro.').positive('Precisa ser maior que zero.').nullable(),
+);
+
 export const dataISO = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use uma data válida.')
@@ -134,8 +146,8 @@ export const lancamentoSchema = z
     accountId: z.string().nullable().optional(),
     cardId: z.string().nullable().optional(),
     responsavel,
-    parcelaAtual: z.coerce.number().int().positive().nullable().optional(),
-    parcelaTotal: z.coerce.number().int().positive().nullable().optional(),
+    parcelaAtual: inteiroPositivoOpcional,
+    parcelaTotal: inteiroPositivoOpcional,
   })
   .refine((v) => !!v.accountId !== !!v.cardId, {
     message: 'Escolha uma conta ou um cartão.',

@@ -16,6 +16,8 @@ import {
 import { useEffect, useState } from 'react';
 import { useCartoes, useCategorias, useFatura, usePagarFatura } from '../api/hooks.js';
 import type { Cartao } from '../api/types.js';
+import { CartaoDialog } from '../dialogs/CartaoDialog.js';
+import { useCrud } from '../dialogs/useCrud.js';
 import { useCompetencia } from '../state/competencia.js';
 import { TelaHeader } from '../shell/TelaHeader.js';
 
@@ -35,6 +37,8 @@ export function Cartoes() {
     }
   }, [cartoes.data, selecionado]);
 
+  const crud = useCrud<Cartao>('cards', { singular: 'Cartão', artigo: 'o' });
+
   const fatura = useFatura(selecionado, mes);
   const categorias = useCategorias();
 
@@ -43,7 +47,13 @@ export function Cartoes() {
 
   return (
     <>
-      <TelaHeader acoes={<Button variant="primary">Cadastrar cartão</Button>} />
+      <TelaHeader
+        acoes={
+          <Button variant="primary" onClick={crud.abrirNovo}>
+            Cadastrar cartão
+          </Button>
+        }
+      />
 
       {cartoes.data && cartoes.data.length > 0 && (
         <CardMeta style={{ marginBottom: 'var(--space-3)' }}>
@@ -66,7 +76,11 @@ export function Cartoes() {
         <EmptyState
           titulo="Nenhum cartão cadastrado"
           descricao="Informe limite, fechamento e vencimento para o Raiz montar a fatura."
-          acao={<Button variant="primary">Cadastrar cartão</Button>}
+          acao={
+            <Button variant="primary" onClick={crud.abrirNovo}>
+              Cadastrar cartão
+            </Button>
+          }
         />
       )}
 
@@ -108,7 +122,9 @@ export function Cartoes() {
                 style={{ fontFamily: 'var(--font-heading)', fontSize: 23, display: 'block' }}
               />
               <div className="raiz-row" style={{ justifyContent: 'flex-end' }}>
-                <Button variant="secondary">Editar cartão</Button>
+                <Button variant="secondary" onClick={() => crud.abrirEdicao(fatura.data.cartao)}>
+                  Editar cartão
+                </Button>
                 <Button
                   variant={fatura.data.paga ? 'secondary' : 'primary'}
                   disabled={pagar.isPending}
@@ -167,6 +183,9 @@ export function Cartoes() {
           </CardMeta>
         </Card>
       )}
+
+      <CartaoDialog aberto={crud.dialogoAberto} editando={crud.editando} onFechar={crud.fechar} />
+      {crud.confirmacao}
     </>
   );
 }

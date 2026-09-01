@@ -72,6 +72,9 @@ importers:
       '@raiz/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@raiz/schemas':
+        specifier: workspace:*
+        version: link:../../packages/schemas
       '@raiz/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -90,6 +93,9 @@ importers:
       react-router-dom:
         specifier: ^7.1.1
         version: 7.18.3(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
     devDependencies:
       '@testing-library/jest-dom':
         specifier: ^7.0.1
