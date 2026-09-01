@@ -8,6 +8,8 @@ import { HttpError, responderErro } from './http/errors.js';
 import { authPlugin } from './plugins/auth.js';
 import { analyticsRoutes } from './routes/analytics.js';
 import { authRoutes } from './routes/auth.js';
+import { cronRoutes } from './routes/cron.js';
+import { importRoutes } from './routes/imports.js';
 import { entityRoutes } from './routes/entities.js';
 import { invoiceRoutes } from './routes/invoices.js';
 import { subscriptionRoutes } from './routes/subscriptions.js';
@@ -58,6 +60,8 @@ export function buildApp({
   app.register(subscriptionRoutes, { prisma });
   app.register(invoiceRoutes, { prisma });
   app.register(analyticsRoutes, { prisma });
+  app.register(importRoutes, { prisma });
+  app.register(cronRoutes, { prisma, env });
 
   app.setNotFoundHandler((request, reply) => {
     reply.code(404).send({

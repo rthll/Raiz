@@ -30,6 +30,16 @@ afterAll(async () => {
 
 const suite = seedAplicado ? describe : describe.skip;
 
+/**
+ * As contagens são escopadas ao household do seed: outros testes criam casas
+ * temporárias no mesmo banco, e um count() global quebraria conforme a ordem
+ * de execução.
+ */
+const householdDoSeed = await prisma.household
+  .findFirst({ where: { nome: 'Casa da Ana e do Bruno' } })
+  .catch(() => null);
+const escopo = { householdId: householdDoSeed?.id ?? '' };
+
 if (!seedAplicado) {
   console.warn(
     '\n[seed.integration] pulado: sem banco alcançável ou seed não aplicado.' +
@@ -40,23 +50,25 @@ if (!seedAplicado) {
 const brl = (v: unknown) => formatBRL(Number(v));
 
 suite('seed no banco', () => {
-  it('grava exatamente um household, sem duplicar ao rodar de novo', async () => {
-    expect(await prisma.household.count()).toBe(1);
+  it('grava exatamente um household do seed, sem duplicar ao rodar de novo', async () => {
+    expect(
+      await prisma.household.count({ where: { nome: 'Casa da Ana e do Bruno' } }),
+    ).toBe(1);
   });
 
   it('grava a contagem certa de cada entidade', async () => {
     expect({
-      users: await prisma.user.count(),
-      accounts: await prisma.account.count(),
-      cards: await prisma.card.count(),
-      categories: await prisma.category.count(),
-      transactions: await prisma.transaction.count(),
-      subscriptions: await prisma.subscription.count(),
-      assets: await prisma.asset.count(),
-      goals: await prisma.goal.count(),
-      rules: await prisma.rule.count(),
-      imports: await prisma.import.count(),
-      invoices: await prisma.invoice.count(),
+      users: await prisma.user.count({ where: escopo }),
+      accounts: await prisma.account.count({ where: escopo }),
+      cards: await prisma.card.count({ where: escopo }),
+      categories: await prisma.category.count({ where: escopo }),
+      transactions: await prisma.transaction.count({ where: escopo }),
+      subscriptions: await prisma.subscription.count({ where: escopo }),
+      assets: await prisma.asset.count({ where: escopo }),
+      goals: await prisma.goal.count({ where: escopo }),
+      rules: await prisma.rule.count({ where: escopo }),
+      imports: await prisma.import.count({ where: escopo }),
+      invoices: await prisma.invoice.count({ where: { card: escopo } }),
     }).toEqual({
       users: 2,
       accounts: 3,
@@ -77,14 +89,14 @@ suite('KPIs agregados no banco', () => {
   it('entradas, saídas, saldo e investido batem com os screenshots', async () => {
     const entradas = await prisma.transaction.aggregate({
       _sum: { valor: true },
-      where: { tipo: 'ENTRADA' },
+      where: { ...escopo, tipo: 'ENTRADA' },
     });
     const saidas = await prisma.transaction.aggregate({
       _sum: { valor: true },
-      where: { tipo: 'SAIDA' },
+      where: { ...escopo, tipo: 'SAIDA' },
     });
-    const saldo = await prisma.account.aggregate({ _sum: { saldo: true } });
-    const investido = await prisma.asset.aggregate({ _sum: { valor: true } });
+    const saldo = await prisma.account.aggregate({ _sum: { saldo: true }, where: escopo });
+    const investido = await prisma.asset.aggregate({ _sum: { valor: true }, where: escopo });
 
     expect(brl(entradas._sum.valor)).toBe('R$ 14.400,00');
     expect(brl(saidas._sum.valor)).toBe('R$ 7.783,70');
@@ -94,7 +106,9 @@ suite('KPIs agregados no banco', () => {
 
   it('Decimal sobrevive à ida e volta sem erro de centavo', async () => {
     // 612,40 em float64 é 612.4000000000000909…; em Decimal(12,2) tem de voltar exato.
-    const t = await prisma.transaction.findFirst({ where: { descricao: 'Supermercado Vila' } });
+    const t = await prisma.transaction.findFirst({
+      where: { ...escopo, descricao: 'Supermercado Vila' },
+    });
     expect(t!.valor.toString()).toBe('612.4');
     expect(brl(t!.valor)).toBe('R$ 612,40');
   });
@@ -102,7 +116,7 @@ suite('KPIs agregados no banco', () => {
 
 suite('faturas derivadas dos lançamentos', () => {
   it('a soma dos lançamentos de cada cartão bate com o total materializado', async () => {
-    const cards = await prisma.card.findMany({ orderBy: { ordem: 'asc' } });
+    const cards = await prisma.card.findMany({ where: escopo, orderBy: { ordem: 'asc' } });
     const totais: Record<string, string> = {};
 
     for (const card of cards) {
@@ -130,28 +144,31 @@ suite('faturas derivadas dos lançamentos', () => {
 suite('constraints do schema', () => {
   it('nenhum lançamento tem conta e cartão ao mesmo tempo, nem fica sem os dois', async () => {
     const ambos = await prisma.transaction.count({
-      where: { AND: [{ accountId: { not: null } }, { cardId: { not: null } }] },
+      where: { ...escopo, AND: [{ accountId: { not: null } }, { cardId: { not: null } }] },
     });
     const nenhum = await prisma.transaction.count({
-      where: { accountId: null, cardId: null },
+      where: { ...escopo, accountId: null, cardId: null },
     });
     expect({ ambos, nenhum }).toEqual({ ambos: 0, nenhum: 0 });
   });
 
   it('todo lançamento tem fingerprint, e todos são únicos', async () => {
-    const linhas = await prisma.transaction.findMany({ select: { fingerprint: true } });
+    const linhas = await prisma.transaction.findMany({
+      where: escopo,
+      select: { fingerprint: true },
+    });
     expect(linhas.every((t) => !!t.fingerprint)).toBe(true);
     expect(new Set(linhas.map((t) => t.fingerprint)).size).toBe(linhas.length);
   });
 
   it('a categoria de entrada fica com orçamento nulo, não zero', async () => {
-    const salario = await prisma.category.findFirst({ where: { nome: 'Salário' } });
+    const salario = await prisma.category.findFirst({ where: { ...escopo, nome: 'Salário' } });
     expect(salario!.tipo).toBe('ENTRADA');
     expect(salario!.orcamentoMensal).toBeNull();
   });
 
   it('o primeiro cartão é o escuro, e só ele', async () => {
-    const escuros = await prisma.card.findMany({ where: { temaEscuro: true } });
+    const escuros = await prisma.card.findMany({ where: { ...escopo, temaEscuro: true } });
     expect(escuros).toHaveLength(1);
     expect(escuros[0]!.nome).toBe('Nubank Ultravioleta');
   });
@@ -159,7 +176,7 @@ suite('constraints do schema', () => {
 
 suite('orçamento estourado', () => {
   it('Moradia chega a 183% do limite — o caso que a UI precisa pintar', async () => {
-    const moradia = await prisma.category.findFirst({ where: { nome: 'Moradia' } });
+    const moradia = await prisma.category.findFirst({ where: { ...escopo, nome: 'Moradia' } });
     const agg = await prisma.transaction.aggregate({
       _sum: { valor: true },
       where: { categoriaId: moradia!.id, tipo: 'SAIDA' },
@@ -186,7 +203,7 @@ suite('usuários e senha', () => {
   });
 
   it('os dois usuários pertencem ao mesmo household', async () => {
-    const users = await prisma.user.findMany();
+    const users = await prisma.user.findMany({ where: escopo });
     expect(new Set(users.map((u) => u.householdId)).size).toBe(1);
   });
 

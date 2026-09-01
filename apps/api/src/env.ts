@@ -18,6 +18,9 @@ const schema = z.object({
   JWT_SECRET: z.string().min(32, 'precisa de pelo menos 32 caracteres'),
   JWT_REFRESH_SECRET: z.string().min(32, 'precisa de pelo menos 32 caracteres'),
 
+  /** Segredo do cron diário. Sem ele, a rota /api/cron/daily recusa tudo. */
+  CRON_SECRET: z.string().min(16).optional(),
+
   /** Vida do access token. Curta de propósito — o refresh é quem sustenta a sessão. */
   ACCESS_TOKEN_TTL: z.string().default('15m'),
   REFRESH_TOKEN_TTL_DIAS: z.coerce.number().int().positive().default(30),

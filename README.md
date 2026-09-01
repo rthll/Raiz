@@ -100,6 +100,21 @@ O seed vive em dois arquivos de propósito: `prisma/seed-data.ts` é dado puro (
 screenshots; `seed.integration.test.ts` confere a ida e volta pelo Postgres e pula sozinho quando não
 há banco alcançável.
 
+## Importação de extrato
+
+ lê CSV e OFX reconhecendo as variações comuns dos bancos
+brasileiros: separador  ou , cabeçalhos com nomes diferentes, três formatos de data,
+valor em pt-BR ou en-US, e débito/crédito em colunas separadas. Linha ilegível é pulada com o
+motivo, não derruba o arquivo inteiro.
+
+O fluxo é **analisar e depois gravar**:  diz o que entraria (com
+duplicatas marcadas e categorias sugeridas pelas regras) sem escrever nada;  grava o
+que a pessoa aprovou. Importar às cegas um extrato de 200 linhas é difícil de desfazer.
+
+O cron diário (, protegido por ) gera os lançamentos
+recorrentes, levanta alertas de teste grátis e fatura fechando, e limpa refresh tokens vencidos.
+É idempotente: rodar duas vezes no mesmo dia não duplica nada.
+
 ## Vitrine do design system
 
 `/design-system` renderiza todos os componentes em todos os estados — incluindo os raros (vazio,
@@ -139,6 +154,6 @@ componente vai em CSS Modules em cima de `var(--space-*)`.
 - [x] **Etapa 4** — Backend: auth + CRUD + endpoints agregados
 - [x] **Etapa 5** — As 10 telas, em 4 ondas
 - [x] **Etapa 6** — Diálogos, validação e estados (vazio, carregando, erro, confirmação)
-- [ ] **Etapa 7** — Importação CSV/OFX (inclui o 7º diálogo), regras automáticas, recorrências
+- [x] **Etapa 7** — Importação CSV/OFX, regras automáticas, recorrências, cron diário
 - [ ] **Etapa 8** — Responsivo em aparelho real, acessibilidade, performance
 - [ ] **Etapa 9** — Produção: env, migrations no deploy, domínio, QA contra os screenshots

@@ -140,6 +140,17 @@ export interface Regra {
   ordem: number;
 }
 
+export interface Importacao {
+  id: string;
+  arquivo: string;
+  accountId: string;
+  periodoInicio: string;
+  periodoFim: string;
+  quantidade: number;
+  classificados: number;
+  criadoEm: string;
+}
+
 export interface UsoOrcamento {
   gasto: number;
   limite: number;

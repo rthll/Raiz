@@ -10,6 +10,7 @@ import type {
   Dashboard,
   Fatura,
   ListaLancamentos,
+  Importacao,
   MetaComProgresso,
   Orcamentos,
   Projecao,
@@ -42,6 +43,7 @@ export const chaves = {
   relatorios: (mes: string) => ['relatorios', mes] as const,
   cashflow: (ate: string, meses: number) => ['cashflow', ate, meses] as const,
   regras: () => ['regras'] as const,
+  importacoes: () => ['importacoes'] as const,
 };
 
 export interface FiltroLancamentos {
@@ -124,6 +126,9 @@ export const useCashflow = (ate: string, meses = 8) =>
     queryKey: chaves.cashflow(ate, meses),
     queryFn: () => get<Cashflow>(`/cashflow?ate=${ate}&meses=${meses}`),
   });
+
+export const useImportacoes = () =>
+  useQuery({ queryKey: chaves.importacoes(), queryFn: () => get<Importacao[]>('/imports') });
 
 export const useRegras = () =>
   useQuery({ queryKey: chaves.regras(), queryFn: () => get<Regra[]>('/rules') });

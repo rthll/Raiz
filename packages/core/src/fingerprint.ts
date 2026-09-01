@@ -6,11 +6,17 @@
  * espaçamento diferentes conforme o banco e o formato (CSV vs OFX).
  */
 
+/**
+ * Remove os sinais diacríticos de uma string, preservando as letras.
+ * Única implementação disso no sistema — parser de extrato e dedupe usam esta.
+ */
+export function removerAcentos(input: string): string {
+  return input.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 /** Remove acentos, caixa, pontuação e espaços repetidos. */
 export function normalizeDescription(input: string): string {
-  return input
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+  return removerAcentos(input)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();

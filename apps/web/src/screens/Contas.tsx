@@ -1,6 +1,10 @@
 import { formatBRL } from '@raiz/core';
 import {
   Button,
+  Table,
+  Tag,
+  TdNumero,
+  ThNumero,
   Card,
   CardKicker,
   CardMeta,
@@ -11,11 +15,13 @@ import {
   Monogram,
   SkeletonCard,
 } from '@raiz/ui';
-import { useContas } from '../api/hooks.js';
+import { useContas, useImportacoes } from '../api/hooks.js';
 import type { Conta, TipoConta } from '../api/types.js';
 import { ContaDialog } from '../dialogs/ContaDialog.js';
+import { ImportarDialog } from '../dialogs/ImportarDialog.js';
 import { useCrud } from '../dialogs/useCrud.js';
 import { TelaHeader } from '../shell/TelaHeader.js';
+import { useState } from 'react';
 
 const ROTULO_TIPO: Record<TipoConta, string> = {
   CORRENTE: 'Conta corrente',
@@ -35,8 +41,21 @@ function desde(iso: string | null): string {
   return `há ${Math.floor(dias / 30)} ${Math.floor(dias / 30) === 1 ? 'mês' : 'meses'}`;
 }
 
+/**  +  → . */
+/** `2026-08-01` + `2026-08-28` → `01–28/08`; meses diferentes mostram os dois. */
+function periodo(inicio: string, fim: string): string {
+  const dia = (iso: string) => iso.slice(8, 10);
+  const mes = (iso: string) => iso.slice(5, 7);
+  return mes(inicio) === mes(fim)
+    ? `${dia(inicio)}–${dia(fim)}/${mes(fim)}`
+    : `${dia(inicio)}/${mes(inicio)}–${dia(fim)}/${mes(fim)}`;
+}
+
 export function Contas() {
   const contas = useContas();
+  const importacoes = useImportacoes();
+  const [importando, setImportando] = useState(false);
+
   const crud = useCrud<Conta>('accounts', { singular: 'Conta', artigo: 'a' });
 
   const saldoTotal = contas.data?.reduce((a, c) => a + c.saldo, 0) ?? 0;
@@ -46,9 +65,14 @@ export function Contas() {
       <TelaHeader
         semMes
         acoes={
-          <Button variant="primary" onClick={crud.abrirNovo}>
-            Nova conta
-          </Button>
+          <>
+            <Button variant="secondary" onClick={() => setImportando(true)}>
+              Importar CSV/OFX
+            </Button>
+            <Button variant="primary" onClick={crud.abrirNovo}>
+              Nova conta
+            </Button>
+          </>
         }
       />
 
@@ -127,14 +151,48 @@ export function Contas() {
             type="button"
             className="raiz-tile-importar"
             aria-label="Importar extrato CSV ou OFX"
+            onClick={() => setImportando(true)}
           >
             <CardKicker>Importar extrato</CardKicker>
             <span style={{ fontSize: 14 }}>Arraste um arquivo CSV ou OFX</span>
-            <CardMeta>até 5 MB · a Etapa 7 liga o parser</CardMeta>
+            <CardMeta>até 5 MB · CSV ou OFX</CardMeta>
           </button>
         </div>
       )}
 
+      {importacoes.data && importacoes.data.length > 0 && (
+        <Card style={{ marginTop: 'var(--space-3)' }}>
+          <CardKicker>Últimas importações</CardKicker>
+          <Table aria="Histórico de importações">
+            <thead>
+              <tr>
+                <th scope="col">Arquivo</th>
+                <th scope="col">Conta</th>
+                <th scope="col">Período</th>
+                <ThNumero>Lançamentos</ThNumero>
+                <th scope="col">Classificados</th>
+              </tr>
+            </thead>
+            <tbody>
+              {importacoes.data.map((imp) => (
+                <tr key={imp.id}>
+                  <td>{imp.arquivo}</td>
+                  <td>{contas.data?.find((c) => c.id === imp.accountId)?.nome ?? '—'}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    {periodo(imp.periodoInicio, imp.periodoFim)}
+                  </td>
+                  <TdNumero>{imp.quantidade}</TdNumero>
+                  <td>
+                    <Tag variant="accent-2">{imp.classificados} classificados</Tag>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Card>
+      )}
+
+      <ImportarDialog aberto={importando} onFechar={() => setImportando(false)} />
       <ContaDialog aberto={crud.dialogoAberto} editando={crud.editando} onFechar={crud.fechar} />
       {crud.confirmacao}
     </>
