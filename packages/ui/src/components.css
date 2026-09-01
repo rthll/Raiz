@@ -66,29 +66,35 @@
   gap: var(--space-3);
 }
 
-/* 4 KPIs por linha em tela cheia; colapsa sozinho. */
+/*
+ * 4 KPIs por linha em tela cheia; colapsa sozinho.
+ *
+ * O `min(Xpx, 100%)` dentro do minmax nao e enfeite: `minmax(320px, 1fr)` puro
+ * mantem a faixa em 320px mesmo num container de 294px, e a pagina passa a rolar
+ * na horizontal. Com o min(), a faixa encolhe junto com o container.
+ */
 .raiz-grid-kpi {
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(190px, 100%), 1fr));
 }
 
 /* Cards médios: categorias, assinaturas, contas. */
 .raiz-grid-card {
-  grid-template-columns: repeat(auto-fit, minmax(268px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(268px, 100%), 1fr));
 }
 
 .raiz-grid-card-wide {
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
 }
 
 /* Painéis largos: fluxo de caixa, tabelas. */
 .raiz-grid-panel {
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
 }
 
 /* Campos do diálogo, em duas colunas. */
 .raiz-form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
   gap: var(--space-3);
 }
 

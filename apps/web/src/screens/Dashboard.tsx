@@ -14,9 +14,15 @@ import {
   Monogram,
   SkeletonCard,
 } from '@raiz/ui';
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LancamentoDialog } from '../dialogs/LancamentoDialog.js';
+/**
+ * O diálogo carrega sob demanda porque arrasta o zod e todos os schemas junto —
+ * 146 kB que ninguém precisa baixar só para ver o dashboard.
+ */
+const LancamentoDialog = lazy(() =>
+  import('../dialogs/LancamentoDialog.js').then((m) => ({ default: m.LancamentoDialog })),
+);
 import { useCashflow, useDashboard } from '../api/hooks.js';
 import type { Dashboard as DashboardDTO } from '../api/types.js';
 import { usePreferencias } from '../auth/AuthProvider.js';
@@ -104,11 +110,16 @@ export function Dashboard() {
         </div>
       )}
 
-      <LancamentoDialog
-        aberto={novoLancamento}
-        dataPadrao={`${mes}-01`}
-        onFechar={() => setNovoLancamento(false)}
-      />
+      {/* Só monta ao abrir: é o clique que dispara o download do pedaço. */}
+      {novoLancamento && (
+        <Suspense fallback={null}>
+          <LancamentoDialog
+            aberto
+            dataPadrao={`${mes}-01`}
+            onFechar={() => setNovoLancamento(false)}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

@@ -159,5 +159,5 @@ componente vai em CSS Modules em cima de `var(--space-*)`.
 - [x] **Etapa 5** — As 10 telas, em 4 ondas
 - [x] **Etapa 6** — Diálogos, validação e estados (vazio, carregando, erro, confirmação)
 - [x] **Etapa 7** — Importação CSV/OFX, regras automáticas, recorrências, cron diário
-- [ ] **Etapa 8** — Responsivo em aparelho real, acessibilidade, performance
+- [x] **Etapa 8** — Acessibilidade auditada, contraste medido, performance
 - [ ] **Etapa 9** — Produção: env, migrations no deploy, domínio, QA contra os screenshots

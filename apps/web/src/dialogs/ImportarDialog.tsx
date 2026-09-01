@@ -232,11 +232,18 @@ export function ImportarDialog({ aberto, onFechar }: { aberto: boolean; onFechar
 
         {!previa && (
           <>
+            {/*
+              O input existe só para abrir o seletor do sistema; quem anuncia e
+              recebe o foco é o botão abaixo. Sem `tabIndex={-1}` + `aria-hidden`
+              ele vira um segundo controle, sem rótulo, no caminho do Tab.
+            */}
             <input
               ref={inputArquivo}
               type="file"
               accept=".csv,.ofx,.txt"
               className="raiz-sr-only"
+              tabIndex={-1}
+              aria-hidden="true"
               onChange={(e) => {
                 const arquivo = e.target.files?.[0];
                 if (arquivo) void enviarParaPrevia(arquivo);

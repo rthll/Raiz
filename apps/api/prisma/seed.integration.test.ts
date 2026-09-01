@@ -40,6 +40,28 @@ const householdDoSeed = await prisma.household
   .catch(() => null);
 const escopo = { householdId: householdDoSeed?.id ?? '' };
 
+/**
+ * Guarda de sanidade do seed.
+ *
+ * Estes testes conferem números exatos contra o household do seed. Se alguém
+ * mexer nesse household — importar um extrato à mão, criar um lançamento pela
+ * tela — as asserções quebram com um diff incompreensível. Este guarda troca
+ * isso por uma instrução acionável.
+ */
+const SEED_ESPERADO = 17;
+const lancamentosDoSeed = householdDoSeed
+  ? await prisma.transaction.count({ where: { householdId: householdDoSeed.id } })
+  : 0;
+
+if (seedAplicado && lancamentosDoSeed !== SEED_ESPERADO) {
+  throw new Error(
+    `O household do seed tem ${lancamentosDoSeed} lançamentos, esperado ${SEED_ESPERADO}. ` +
+      'Alguém alterou os dados do seed — importação manual, lançamento criado pela tela. ' +
+      'Rode: pnpm --filter @raiz/api db:seed',
+  );
+}
+
+
 if (!seedAplicado) {
   console.warn(
     '\n[seed.integration] pulado: sem banco alcançável ou seed não aplicado.' +
