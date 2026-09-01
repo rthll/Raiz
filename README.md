@@ -102,13 +102,6 @@ há banco alcançável.
 
 ## Vitrine do design system
 
- renderiza todos os componentes em todos os estados — incluindo os raros
-(vazio, erro, estouro de orçamento, modo privacidade). É a forma rápida de conferir o
-sistema contra os screenshots do handoff. Fica fora da navegação: é ferramenta de
-desenvolvimento, não uma tela do produto.
-
-## Vitrine do design system
-
 `/design-system` renderiza todos os componentes em todos os estados — incluindo os raros (vazio,
 erro, estouro de orçamento, modo privacidade). É a forma rápida de conferir o sistema contra os
 screenshots do handoff. Fica fora da navegação: é ferramenta de desenvolvimento, não tela do produto.
