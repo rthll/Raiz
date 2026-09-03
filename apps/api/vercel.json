@@ -2,7 +2,17 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "prisma migrate deploy && prisma generate",
-  "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
-  "crons": [{ "path": "/api/cron/daily", "schedule": "0 6 * * *" }]
+  "buildCommand": "pnpm --filter @raiz/core --filter @raiz/schemas run build && prisma migrate deploy && prisma generate",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/daily",
+      "schedule": "0 6 * * *"
+    }
+  ]
 }
