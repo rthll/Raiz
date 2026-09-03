@@ -91,13 +91,23 @@ async function interpretar<T>(res: Response): Promise<T> {
   const dados: unknown = texto ? JSON.parse(texto) : null;
 
   if (!res.ok) {
-    const corpo = (dados ?? {}) as { error?: string; message?: string; campos?: Record<string, string> };
-    throw new ApiError(
-      res.status,
-      corpo.error ?? 'erro',
-      corpo.message ?? 'Não foi possível concluir a operação.',
-      corpo.campos,
-    );
+    const corpo = (dados ?? {}) as { error?: unknown; message?: unknown; campos?: Record<string, string> };
+
+    /*
+     * Nem todo erro vem da nossa API. A proteção de deployment da Vercel
+     * responde `{ error: { message, code } }` — JSON válido, formato alheio —
+     * e um proxy no meio pode responder qualquer outra coisa. Quando a
+     * mensagem não vier no formato esperado, o status vai junto: sem ele,
+     * "não foi possível" não diz a ninguém o que aconteceu, e foi assim que um
+     * 401 de porta errada virou meia hora de investigação.
+     */
+    const codigo = typeof corpo.error === 'string' ? corpo.error : 'erro';
+    const mensagem =
+      typeof corpo.message === 'string'
+        ? corpo.message
+        : `Não foi possível concluir a operação (HTTP ${res.status}).`;
+
+    throw new ApiError(res.status, codigo, mensagem, corpo.campos);
   }
   return dados as T;
 }

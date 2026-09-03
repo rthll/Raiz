@@ -103,6 +103,25 @@ O destino do rewrite em `apps/web/vercel.json` já aponta para
 autenticação. As URLs de deployment (`raiz-api-*-projects.vercel.app`) devolvem
 302 para o SSO da Vercel — não sirvam de destino de rewrite.
 
+### Use o domínio, nunca a URL de deployment
+
+A Vercel mostra uma URL de deployment logo depois de cada build
+(`raiz-web-<hash>-<time>.vercel.app`). **Ela não serve para usar o sistema.**
+
+Essas URLs ficam atrás da Deployment Protection. Quem está logado na Vercel
+abre a página normalmente — o GET é redirecionado pelo SSO —, mas as chamadas
+de API voltam `401` com um JSON da própria plataforma:
+
+```json
+{ "error": { "message": "Protected deployment", "code": "401" } }
+```
+
+O pedido nunca chega na API, então nem aparece nos logs dela. O sintoma é
+cadastro e login falhando numa página que carregou sem reclamar.
+
+Vale para os dois projetos: use `raiz-web-drab.vercel.app` e
+`raiz-api.vercel.app`, os domínios de produção.
+
 ## 4. Primeiro acesso
 
 O banco sobe vazio — o seed é dado de demonstração e **não deve ir para

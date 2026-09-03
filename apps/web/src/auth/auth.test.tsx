@@ -131,6 +131,28 @@ describe('cadastro', () => {
       'Já existe uma conta com esse e-mail.',
     );
   });
+
+  it('mostra o status quando o erro não vem da nossa API', async () => {
+    /*
+     * Formato real da proteção de deployment da Vercel: JSON válido, com a
+     * mensagem aninhada em `error.message`, onde o cliente não a procura. Sem o
+     * status na tela, o erro vira um beco sem saída — foi o que aconteceu ao
+     * tentar criar conta pela URL de deployment em vez do domínio.
+     */
+    respostaDoRegistro = {
+      status: 401,
+      corpo: {
+        error: { message: 'Protected deployment', code: '401' },
+        protection: { vercel_auth_enabled: true },
+      },
+    };
+    const pessoa = userEvent.setup();
+    montar(<Registro />);
+    await preencher(pessoa);
+    await pessoa.click(screen.getByRole('button', { name: 'Criar conta' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('HTTP 401');
+  });
 });
 
 describe('portão', () => {
