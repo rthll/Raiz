@@ -1,0 +1,14 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Raiz — API</title>
+<p>API do Raiz. As rotas vivem em <code>/api/*</code>; a saúde do serviço em
+<a href="/api/health">/api/health</a>.</p>
+<!--
+  Este arquivo existe por exigência da Vercel, não por necessidade do produto.
+
+  Definir um buildCommand próprio com framework null faz a plataforma cobrar um
+  diretório estático ao final do build — e recusa tanto a ausência dele quanto
+  um diretório vazio. Como a API só serve Functions, o conteúdo aqui é
+  irrelevante: o rewrite "/(.*)" -> "/api" do vercel.json roda antes da checagem
+  de filesystem, então nenhuma requisição chega a este arquivo.
+-->

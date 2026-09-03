@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "installCommand": "pnpm install --frozen-lockfile",
-  "buildCommand": "pnpm --filter @raiz/core --filter @raiz/schemas run build && prisma migrate deploy && prisma generate && mkdir -p public",
+  "buildCommand": "pnpm --filter @raiz/core --filter @raiz/schemas run build && prisma migrate deploy && prisma generate",
   "outputDirectory": "public",
   "rewrites": [
     {
