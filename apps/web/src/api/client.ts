@@ -32,7 +32,20 @@ export class ApiError extends Error {
   }
 }
 
-const BASE = import.meta.env.VITE_API_URL ?? '/api';
+/**
+ * Base das chamadas à API.
+ *
+ * `??` não basta: uma variável criada em branco no painel chega como `''`, que
+ * para o operador é um valor presente. A base virava vazia e
+ * `/api/auth/register` saía como `/auth/register` — sem o prefixo, o rewrite da
+ * Vercel não casa, o fallback da SPA serve o index.html, e um POST em arquivo
+ * estático responde 405. Em branco significa "não configurado".
+ */
+export function baseDaApi(valor: string | undefined): string {
+  return valor?.trim() || '/api';
+}
+
+const BASE = baseDaApi(import.meta.env.VITE_API_URL);
 
 interface Opcoes {
   method?: string;
