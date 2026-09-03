@@ -28,8 +28,19 @@ const schema = z.object({
 
 export type Env = z.infer<typeof schema> & { corsOrigins: string[]; isProd: boolean };
 
+/**
+ * Um painel de variáveis de ambiente deixa criar a chave sem valor, e é o que
+ * costuma acontecer com as opcionais. Para o Zod, `''` é um valor presente: o
+ * `.default()` não entra e `z.coerce.number('')` vira `0`, que reprova no
+ * `.positive()`. Descartar as vazias faz "declarada em branco" significar o
+ * mesmo que "não declarada" — que é o que quem deixou o campo vazio quis dizer.
+ */
+function semVazias(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return Object.fromEntries(Object.entries(source).filter(([, valor]) => valor !== ''));
+}
+
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  const parsed = schema.safeParse(source);
+  const parsed = schema.safeParse(semVazias(source));
   if (!parsed.success) {
     const detalhes = parsed.error.issues.map((i) => `  ${i.path.join('.')}: ${i.message}`);
     throw new Error(`Variáveis de ambiente inválidas:\n${detalhes.join('\n')}`);

@@ -55,6 +55,19 @@ describe('env', () => {
     expect(parsed.corsOrigins).toEqual(['http://a.com', 'http://b.com']);
   });
 
+  it('trata variável declarada em branco como ausente', () => {
+    // O painel da Vercel deixa criar a chave sem valor. Se '' contar como
+    // presente, o .default() não entra e coerce.number('') vira 0 — que foi
+    // exatamente o que derrubou o boot do primeiro deploy de produção.
+    const parsed = loadEnv({ ...base, PORT: '', REFRESH_TOKEN_TTL_DIAS: '' } as never);
+    expect(parsed.PORT).toBe(3333);
+    expect(parsed.REFRESH_TOKEN_TTL_DIAS).toBe(30);
+  });
+
+  it('ainda cobra a obrigatória declarada em branco', () => {
+    expect(() => loadEnv({ ...base, DATABASE_URL: '' } as never)).toThrow(/DATABASE_URL/);
+  });
+
   it('marca isProd só em produção', () => {
     expect(loadEnv({ ...base, NODE_ENV: 'production' } as never).isProd).toBe(true);
     expect(env.isProd).toBe(false);
