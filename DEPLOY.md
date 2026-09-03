@@ -35,6 +35,12 @@ todo deploy chega ao banco já com o schema em dia. Se a migration falhar, o
 deploy falha — que é o comportamento certo: melhor não subir do que subir com o
 schema errado.
 
+`apps/api/public/index.html` existe por exigência da plataforma, não do produto.
+Definir um `buildCommand` próprio com `framework: null` faz a Vercel cobrar um
+diretório estático ao final do build, e ela recusa tanto a ausência dele quanto
+um diretório vazio. Como o rewrite `/(.*)` → `/api` roda antes da checagem de
+filesystem, nenhuma requisição chega nesse arquivo.
+
 ### Variáveis de ambiente
 
 | Variável | Obrigatória | Observação |
@@ -62,21 +68,40 @@ transforma um token vazado em sessão eterna.
 
 ## 3. Projeto `raiz-web`
 
+Vercel → **Add New** → **Project** → importe o **mesmo repositório** do
+`raiz-api`. Dois projetos apontando para um repositório só é o esperado; o que
+os separa é o Root Directory.
+
 | Configuração | Valor |
 | --- | --- |
+| Project Name | `raiz-web` |
 | Root Directory | `apps/web` |
-| Include files outside root | **ligado** |
+| Include files outside root | **ligado** — sem isso o `pnpm install` não acha `packages/*` |
 | Framework Preset | Vite |
 
-Depois de o `raiz-api` ter domínio, troque o destino do rewrite em
-`apps/web/vercel.json`:
+**Não preencha Build, Install nem Output Directory no painel.** Os três já vêm
+do `apps/web/vercel.json`, e o que estiver no painel vira só um segundo lugar
+onde a verdade pode divergir.
 
-```json
-{ "source": "/api/:path*", "destination": "https://SEU-DOMINIO-DA-API/api/:path*" }
-```
+O `buildCommand` de lá compila `@raiz/core` e `@raiz/schemas` antes do
+`vite build`. Não é zelo: os dois pacotes resolvem para `dist` fora da condição
+de export `development`, então sem esse passo o build morre em
+`Failed to resolve entry for package "@raiz/core"`.
 
-Variável: `VITE_API_URL=/api` (o padrão do código já é esse; declare para deixar
-explícito).
+### Variáveis de ambiente
+
+Nenhuma é obrigatória — `VITE_API_URL` só existe para deixar explícito o `/api`
+que o código já usa por padrão (`apps/web/src/api/client.ts`).
+
+Se declarar, **dê um valor**. Uma chave criada em branco não é o mesmo que uma
+chave ausente para quem lê `process.env`, e foi assim que o primeiro boot da API
+caiu. O `loadEnv` da API passou a descartar as vazias, mas a regra continua
+valendo para qualquer painel.
+
+O destino do rewrite em `apps/web/vercel.json` já aponta para
+`https://raiz-api.vercel.app`, que é o domínio de produção da API e responde sem
+autenticação. As URLs de deployment (`raiz-api-*-projects.vercel.app`) devolvem
+302 para o SSO da Vercel — não sirvam de destino de rewrite.
 
 ## 4. Primeiro acesso
 
