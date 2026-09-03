@@ -47,6 +47,16 @@ interface Casa {
 
 const emails: string[] = [];
 
+/**
+ * Um IP por chamada de credencial.
+ *
+ * O limite de tentativas é por IP e vale também em teste — de propósito, para
+ * exercitar a configuração real de produção. Sem variar o IP, o próprio suite
+ * bateria no limite de registro (3 por 10 minutos) e falharia por 429.
+ */
+let contadorIp = 0;
+const proximoIp = () => `198.51.100.${(contadorIp++ % 250) + 1}`;
+
 async function criarCasa(sufixo: string): Promise<Casa> {
   const email = `teste-${sufixo}-${Date.now()}@raiz.test`;
   emails.push(email);
@@ -54,6 +64,7 @@ async function criarCasa(sufixo: string): Promise<Casa> {
   const registro = await app.inject({
     method: 'POST',
     url: '/api/auth/register',
+    remoteAddress: proximoIp(),
     payload: { nome: `Teste ${sufixo}`, email, senha: 'senha-de-teste' },
   });
   expect(registro.statusCode).toBe(201);
@@ -125,6 +136,7 @@ suite('autenticação', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/auth/register',
+      remoteAddress: proximoIp(),
       payload: { nome: 'Novo', email, senha: 'senha-de-teste' },
     });
 
@@ -145,6 +157,7 @@ suite('autenticação', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/auth/register',
+      remoteAddress: proximoIp(),
       payload: { nome: 'Outro', email: casa.email, senha: 'senha-de-teste' },
     });
     expect(res.statusCode).toBe(409);
@@ -162,11 +175,13 @@ suite('autenticação', () => {
     const senhaErrada = await app.inject({
       method: 'POST',
       url: '/api/auth/login',
+      remoteAddress: proximoIp(),
       payload: { email: casa.email, senha: 'errada' },
     });
     const emailInexistente = await app.inject({
       method: 'POST',
       url: '/api/auth/login',
+      remoteAddress: proximoIp(),
       payload: { email: 'ninguem@raiz.test', senha: 'errada' },
     });
 
@@ -193,6 +208,7 @@ suite('autenticação', () => {
     const registro = await app.inject({
       method: 'POST',
       url: '/api/auth/register',
+      remoteAddress: proximoIp(),
       payload: { nome: 'Rot', email, senha: 'senha-de-teste' },
     });
     const primeiro = registro.cookies.find((c) => c.name === 'raiz_refresh')!.value;
@@ -229,6 +245,7 @@ suite('autenticação', () => {
     const registro = await app.inject({
       method: 'POST',
       url: '/api/auth/register',
+      remoteAddress: proximoIp(),
       payload: { nome: 'Out', email, senha: 'senha-de-teste' },
     });
     const token = registro.cookies.find((c) => c.name === 'raiz_refresh')!.value;

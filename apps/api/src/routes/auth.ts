@@ -11,6 +11,7 @@ import {
 import type { Env } from '../env.js';
 import { HttpError, conflito, validar } from '../http/errors.js';
 import type { AccessPayload } from '../plugins/auth.js';
+import { limiteAuth, limiteRefresh, limiteRegistro } from '../plugins/seguranca.js';
 
 const COOKIE = 'raiz_refresh';
 
@@ -71,7 +72,7 @@ export async function authRoutes(app: FastifyInstance, { prisma, env }: Deps) {
   });
 
   // ── registro
-  app.post('/api/auth/register', async (request, reply) => {
+  app.post('/api/auth/register', { config: limiteRegistro }, async (request, reply) => {
     const dados = validar(registroSchema, request.body);
 
     const jaExiste = await prisma.user.findUnique({ where: { email: dados.email } });
@@ -100,7 +101,7 @@ export async function authRoutes(app: FastifyInstance, { prisma, env }: Deps) {
   });
 
   // ── login
-  app.post('/api/auth/login', async (request, reply) => {
+  app.post('/api/auth/login', { config: limiteAuth }, async (request, reply) => {
     const dados = validar(loginSchema, request.body);
     const user = await prisma.user.findUnique({ where: { email: dados.email } });
 
@@ -125,7 +126,7 @@ export async function authRoutes(app: FastifyInstance, { prisma, env }: Deps) {
   });
 
   // ── refresh
-  app.post('/api/auth/refresh', async (request, reply) => {
+  app.post('/api/auth/refresh', { config: limiteRefresh }, async (request, reply) => {
     const token = request.cookies[COOKIE];
     if (!token) {
       throw new HttpError(401, 'sem_sessao', 'Sessão expirada. Entre novamente.');

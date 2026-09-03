@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { aoExpirarSessao, definirAccessToken, post } from '../api/client.js';
+import { aoExpirarSessao, definirAccessToken, patch, post } from '../api/client.js';
 import type { Preferencias, Usuario } from '../api/types.js';
 
 interface Sessao {
@@ -75,7 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [qc]);
 
   const atualizarPreferencias = useCallback(async (mudanca: Preferencias) => {
-    const dados = await post<{ usuario: Usuario }>('/auth/preferencias', mudanca);
+    // A rota é PATCH: são alterações parciais das três flags.
+    const dados = await patch<{ usuario: Usuario }>('/auth/preferencias', mudanca);
     setUsuario(dados.usuario);
   }, []);
 
