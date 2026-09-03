@@ -1,7 +1,7 @@
 import { PrivacyProvider } from '@raiz/ui';
 import { RouterProvider } from 'react-router-dom';
 import { AuthProvider, usePreferencias, useAuth } from './auth/AuthProvider.js';
-import { Login } from './auth/Login.js';
+import { Autenticacao } from './auth/Autenticacao.js';
 import { router } from './router.js';
 import { CompetenciaProvider } from './state/competencia.js';
 import { ToasterProvider } from './ui/Toaster.js';
@@ -28,7 +28,7 @@ function Portao() {
     );
   }
 
-  if (!usuario) return <Login />;
+  if (!usuario) return <Autenticacao />;
 
   return (
     <PrivacyProvider ativo={modoPrivacidade}>

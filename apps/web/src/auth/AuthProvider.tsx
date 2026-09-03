@@ -1,3 +1,4 @@
+import type { RegistroInput } from '@raiz/schemas';
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { aoExpirarSessao, definirAccessToken, patch, post } from '../api/client.js';
@@ -7,6 +8,7 @@ interface Sessao {
   usuario: Usuario | null;
   carregando: boolean;
   entrar: (email: string, senha: string) => Promise<void>;
+  criarConta: (dados: RegistroInput) => Promise<void>;
   sair: () => Promise<void>;
   atualizarPreferencias: (mudanca: Preferencias) => Promise<void>;
 }
@@ -63,6 +65,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  /**
+   * Registro entra já autenticado: a rota devolve o mesmo par accessToken +
+   * usuário do login e grava o cookie de refresh. Mandar para a tela de login
+   * logo depois de criar a conta seria pedir a senha duas vezes seguidas.
+   */
+  const criarConta = useCallback(async (dados: RegistroInput) => {
+    const resposta = await post<RespostaAuth>('/auth/register', dados);
+    definirAccessToken(resposta.accessToken);
+    setUsuario(resposta.usuario);
+  }, []);
+
   const sair = useCallback(async () => {
     try {
       await post('/auth/logout');
@@ -81,7 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ usuario, carregando, entrar, sair, atualizarPreferencias }}>
+    <AuthContext.Provider
+      value={{ usuario, carregando, entrar, criarConta, sair, atualizarPreferencias }}
+    >
       {children}
     </AuthContext.Provider>
   );

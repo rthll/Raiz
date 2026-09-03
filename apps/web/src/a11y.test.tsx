@@ -26,6 +26,9 @@ import { Lancamentos } from './screens/Lancamentos.js';
 import { Metas } from './screens/Metas.js';
 import { Onboarding } from './screens/Onboarding.js';
 import { Relatorios } from './screens/Relatorios.js';
+import { AuthProvider } from './auth/AuthProvider.js';
+import { Login } from './auth/Login.js';
+import { Registro } from './auth/Registro.js';
 import { LancamentoDialog } from './dialogs/LancamentoDialog.js';
 import { ImportarDialog } from './dialogs/ImportarDialog.js';
 import { CompetenciaProvider } from './state/competencia.js';
@@ -110,6 +113,32 @@ describe('acessibilidade das telas', () => {
 
       const violacoes = await auditar(container);
       expect(violacoes).toEqual([]);
+    });
+  }
+});
+
+/**
+ * As telas de sessão não passam pelo `montar` acima: elas vivem fora do router e
+ * dos providers do app, e o que precisam é do `AuthProvider`.
+ */
+describe('acessibilidade do portão de sessão', () => {
+  const PORTAO: Array<[string, ReactElement]> = [
+    ['Entrar', <Login />],
+    ['Criar conta', <Registro />],
+  ];
+
+  for (const [nome, tela] of PORTAO) {
+    it(`${nome} não tem violação WCAG A/AA`, async () => {
+      const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+      const { container } = render(
+        <QueryClientProvider client={qc}>
+          <AuthProvider>
+            <main>{tela}</main>
+          </AuthProvider>
+        </QueryClientProvider>,
+      );
+
+      expect(await auditar(container)).toEqual([]);
     });
   }
 });
