@@ -76,7 +76,8 @@ Variáveis de ambiente: copie `apps/api/.env.example` → `apps/api/.env` (e o m
 
 ## Deploy
 
-Dois projetos Vercel apontando para o mesmo repositório, com Root Directory diferente:
+Passo a passo completo em [DEPLOY.md](DEPLOY.md). Resumo: dois projetos Vercel
+apontando para o mesmo repositório, com Root Directory diferente:
 
 | Projeto | Root Directory | Observação |
 | --- | --- | --- |
@@ -149,6 +150,11 @@ Se um desses números mudar, o build quebra. É de propósito.
 veja `packages/ui/src/organic/NAO-EDITAR.md`. Todo estilo consome as variáveis dele; layout por
 componente vai em CSS Modules em cima de `var(--space-*)`.
 
+## Conferência visual
+
+[QA.md](QA.md) traz a checklist tela a tela contra os 11 screenshots do handoff,
+com o valor exato de cada número e o que só olho humano confere.
+
 ## Progresso
 
 - [x] **Etapa 0** — Bootstrap: monorepo, tooling, Organic, shell, health check ponta a ponta
@@ -160,4 +166,4 @@ componente vai em CSS Modules em cima de `var(--space-*)`.
 - [x] **Etapa 6** — Diálogos, validação e estados (vazio, carregando, erro, confirmação)
 - [x] **Etapa 7** — Importação CSV/OFX, regras automáticas, recorrências, cron diário
 - [x] **Etapa 8** — Acessibilidade auditada, contraste medido, performance
-- [ ] **Etapa 9** — Produção: env, migrations no deploy, domínio, QA contra os screenshots
+- [x] **Etapa 9** — Produção: endurecimento, migrations no deploy, DEPLOY.md e QA.md
