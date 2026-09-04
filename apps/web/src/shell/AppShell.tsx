@@ -1,8 +1,9 @@
-import { Menu, X } from 'lucide-react';
+import { LogOut, Menu, X } from 'lucide-react';
 import { Button, ICON_STROKE_WIDTH, Money } from '@raiz/ui';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { SCREENS, screenByPath } from '../navigation.js';
+import { useAuth } from '../auth/AuthProvider.js';
+import { SCREENS, TELAS_FORA_DA_NAVEGACAO, screenByPath } from '../navigation.js';
 
 /**
  * Shell de duas colunas: sidebar de 252px + main.
@@ -15,6 +16,7 @@ import { SCREENS, screenByPath } from '../navigation.js';
 export function AppShell({ saldoPrevisto }: { saldoPrevisto?: number }) {
   const { pathname } = useLocation();
   const tela = screenByPath(pathname);
+  const { usuario, sair } = useAuth();
   const [drawerAberto, setDrawerAberto] = useState(false);
   const botaoMenu = useRef<HTMLButtonElement>(null);
 
@@ -83,6 +85,45 @@ export function AppShell({ saldoPrevisto }: { saldoPrevisto?: number }) {
         </nav>
 
         <div className="sidebar-rodape">
+          {/*
+            Separado da navegação principal de propósito: as dez telas do
+            handoff são o produto, e configurações é chrome do aplicativo. O
+            `aria-label` distinto evita dois landmarks de navegação sem nome
+            para quem usa leitor de tela.
+          */}
+          <nav className="nav-vertical" aria-label="Aplicativo">
+            {TELAS_FORA_DA_NAVEGACAO.map((s) => (
+              <NavLink key={s.id} to={s.path} className="nav-item">
+                {s.rotulo}
+              </NavLink>
+            ))}
+          </nav>
+
+          {/*
+            Sair fica fora do <nav>: é ação, não navegação, e um leitor de tela
+            anunciando "link" para algo que encerra a sessão engana. Some junto
+            com o nome de quem está logado, que é o que dá contexto ao botão.
+          */}
+          <div
+            className="raiz-row"
+            style={{ gap: 'var(--space-2)', padding: '0 var(--space-1)' }}
+          >
+            <span
+              className="card-meta"
+              style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}
+            >
+              {usuario?.nome}
+            </span>
+            <Button
+              variant="ghost"
+              onClick={() => void sair()}
+              aria-label={usuario ? `Sair da conta de ${usuario.nome}` : 'Sair'}
+            >
+              <LogOut size={15} strokeWidth={ICON_STROKE_WIDTH} aria-hidden="true" />
+              Sair
+            </Button>
+          </div>
+
           <div className="card" style={{ background: 'var(--color-accent-2-200)' }}>
             <div className="card-kicker">Saldo previsto</div>
             {saldoPrevisto == null ? (

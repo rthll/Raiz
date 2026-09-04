@@ -21,6 +21,7 @@ const Metas = lazy(() => import('./screens/Metas.js').then((m) => ({ default: m.
 const Relatorios = lazy(() => import('./screens/Relatorios.js').then((m) => ({ default: m.Relatorios })));
 const Contas = lazy(() => import('./screens/Contas.js').then((m) => ({ default: m.Contas })));
 const Onboarding = lazy(() => import('./screens/Onboarding.js').then((m) => ({ default: m.Onboarding })));
+const Configuracoes = lazy(() => import('./screens/Configuracoes.js').then((m) => ({ default: m.Configuracoes })));
 const KitchenSink = lazy(() => import('./screens/KitchenSink.js').then((m) => ({ default: m.KitchenSink })));
 
 /**
@@ -59,6 +60,7 @@ export const router = createBrowserRouter([
       { path: 'relatorios', element: sobDemanda(<Relatorios />) },
       { path: 'contas', element: sobDemanda(<Contas />) },
       { path: 'onboarding', element: sobDemanda(<Onboarding />) },
+      { path: 'configuracoes', element: sobDemanda(<Configuracoes />) },
       // Vitrine do design system. Fora da navegação: é ferramenta de
       // desenvolvimento, não uma tela do produto.
       { path: 'design-system', element: sobDemanda(<KitchenSink />) },

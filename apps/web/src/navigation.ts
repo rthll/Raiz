@@ -25,6 +25,28 @@ export const SCREENS: readonly Screen[] = [
   { id: 'onboarding', path: '/onboarding', rotulo: 'Primeiros passos', kicker: 'Configuração', titulo: 'Primeiros passos' },
 ] as const;
 
+/**
+ * Telas que existem mas não entram na sidebar principal.
+ *
+ * `SCREENS` é a lista do handoff e a suíte a trava em dez — acrescentar a de
+ * configurações ali diria que o handoff pede onze telas, e ele não pede. Ela é
+ * chrome do aplicativo, não produto, e por isso mora aqui: fora da navegação de
+ * telas, mas com kicker e título, que é o que o header do main consome.
+ */
+export const TELAS_FORA_DA_NAVEGACAO: readonly Screen[] = [
+  {
+    id: 'configuracoes',
+    path: '/configuracoes',
+    rotulo: 'Configurações',
+    kicker: 'Preferências',
+    titulo: 'Configurações',
+  },
+] as const;
+
 export function screenByPath(pathname: string): Screen {
-  return SCREENS.find((s) => s.path === pathname) ?? SCREENS[0]!;
+  return (
+    SCREENS.find((s) => s.path === pathname) ??
+    TELAS_FORA_DA_NAVEGACAO.find((s) => s.path === pathname) ??
+    SCREENS[0]!
+  );
 }

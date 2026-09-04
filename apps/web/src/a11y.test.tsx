@@ -19,6 +19,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Assinaturas } from './screens/Assinaturas.js';
 import { Cartoes } from './screens/Cartoes.js';
 import { Categorias } from './screens/Categorias.js';
+import { Configuracoes } from './screens/Configuracoes.js';
 import { Contas } from './screens/Contas.js';
 import { Dashboard } from './screens/Dashboard.js';
 import { Investimentos } from './screens/Investimentos.js';
@@ -58,16 +59,18 @@ function montar(tela: ReactElement) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   return render(
     <QueryClientProvider client={qc}>
-      <PrivacyProvider ativo={false}>
-        <ToasterProvider>
-          <CompetenciaProvider>
-            <MemoryRouter>
-              {/* main: o axe exige que o conteúdo esteja dentro de um landmark. */}
-              <main>{tela}</main>
-            </MemoryRouter>
-          </CompetenciaProvider>
-        </ToasterProvider>
-      </PrivacyProvider>
+      <AuthProvider>
+        <PrivacyProvider ativo={false}>
+          <ToasterProvider>
+            <CompetenciaProvider>
+              <MemoryRouter>
+                {/* main: o axe exige que o conteúdo esteja dentro de um landmark. */}
+                <main>{tela}</main>
+              </MemoryRouter>
+            </CompetenciaProvider>
+          </ToasterProvider>
+        </PrivacyProvider>
+      </AuthProvider>
     </QueryClientProvider>,
   );
 }
@@ -100,6 +103,7 @@ const TELAS: Array<[string, ReactElement]> = [
   ['Relatórios', <Relatorios />],
   ['Contas', <Contas />],
   ['Primeiros passos', <Onboarding />],
+  ['Configurações', <Configuracoes />],
 ];
 
 describe('acessibilidade das telas', () => {
@@ -170,7 +174,9 @@ describe('estrutura de headings', () => {
       );
       for (let i = 1; i < niveis.length; i++) {
         // Descer mais de um nível de uma vez quebra a navegação por headings.
-        expect(niveis[i]! - niveis[i - 1]!, `${nome}: ${niveis.join(' → ')}`).toBeLessThanOrEqual(1);
+        expect(niveis[i]! - niveis[i - 1]!, `${nome}: ${niveis.join(' → ')}`).toBeLessThanOrEqual(
+          1,
+        );
       }
       unmount();
     }
